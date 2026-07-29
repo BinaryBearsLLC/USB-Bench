@@ -1,0 +1,29 @@
+name: Feature request
+description: Propose a focused improvement to USB Bench
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What limitation or user need should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Explain the desired behavior and why it fits USB Bench.
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Storage-safety and compatibility impact
+      description: Note any effect on file I/O, persisted results, or measurement semantics.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
