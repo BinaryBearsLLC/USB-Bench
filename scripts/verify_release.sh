@@ -8,9 +8,7 @@ DMG_PATH="${1:-$PROJECT_ROOT/dist/USB-Bench-$VERSION-Apple-Silicon.dmg}"
 MOUNT_DIR="$(mktemp -d "${TMPDIR%/}/usb-bench-mount.XXXXXX")"
 
 cleanup() {
-  if mount | grep -Fq "on $MOUNT_DIR "; then
-    hdiutil detach "$MOUNT_DIR" >/dev/null
-  fi
+  hdiutil detach "$MOUNT_DIR" >/dev/null 2>&1 || true
   rmdir "$MOUNT_DIR" 2>/dev/null || true
 }
 trap cleanup EXIT
