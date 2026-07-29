@@ -1,44 +1,108 @@
-# USB Bench
+<div align="center">
+  <img
+    src="Assets/USB-Bench-Icon.png"
+    width="112"
+    alt="USB Bench logo"
+  >
 
-[![CI](https://github.com/BinaryBearsLLC/USB-Bench/actions/workflows/ci.yml/badge.svg)](https://github.com/BinaryBearsLLC/USB-Bench/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+  <h1>USB Bench</h1>
 
-USB Bench is a native macOS utility for measuring and comparing storage devices,
-USB cables, enclosures, hubs, and ports. It is developed by
-[BinaryBears](https://binarybears.com) and released as open-source software
-under the MIT License.
+  <p><strong>Find the real bottleneck in your USB storage setup.</strong></p>
 
-## Highlights
+  <p>
+    A native, open-source macOS benchmark for USB SSDs, HDDs, flash drives,
+    cables, hubs, enclosures, and ports.
+  </p>
 
-- Device and cable test modes with an explicit reference component.
+  <p>
+    <a href="https://github.com/BinaryBearsLLC/USB-Bench/actions/workflows/ci.yml"><img src="https://github.com/BinaryBearsLLC/USB-Bench/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-087CF0.svg" alt="MIT License"></a>
+    <img src="https://img.shields.io/badge/macOS-14%2B-1D1D1F.svg" alt="macOS 14 or later">
+    <img src="https://img.shields.io/badge/Apple%20Silicon-arm64-1D1D1F.svg" alt="Native Apple Silicon">
+    <img src="https://img.shields.io/badge/telemetry-none-28A745.svg" alt="No telemetry">
+  </p>
+
+  <p>
+    <a href="https://binarybearsllc.github.io/USB-Bench/">Website</a>
+    ·
+    <a href="https://github.com/BinaryBearsLLC/USB-Bench/releases">Releases</a>
+    ·
+    <a href="docs/DEVELOPMENT.md">Development</a>
+    ·
+    <a href="CONTRIBUTING.md">Contributing</a>
+  </p>
+
+  <img
+    src="docs/assets/usb-bench-hero.jpg"
+    width="1200"
+    alt="Generic USB storage devices and cables arranged for a performance benchmark"
+  >
+</div>
+
+## Measure the complete USB chain
+
+A fast drive can be limited by a cable, hub, enclosure, port, or negotiated
+connection speed. USB Bench records the benchmark result together with the
+setup that produced it, making comparisons useful instead of ambiguous.
+
+<p align="center">
+  <img
+    src="docs/assets/usb-bench-app.jpg"
+    width="1100"
+    alt="USB Bench new test screen on macOS with device, drive, and benchmark profile controls"
+  >
+</p>
+
+### What you can benchmark
+
+| Target | Keep constant | Learn |
+| --- | --- | --- |
+| External SSD, HDD, or flash drive | Cable, port, profile, and file size | Real storage performance |
+| USB cable | Fast reference SSD, port, profile, and file size | Whether the cable limits throughput |
+| Hub or enclosure | Reference drive, cable, port, and profile | The accessory's practical ceiling |
+| Mac port | Reference drive, cable, and profile | Negotiated link and port-level differences |
+
+## Results with context
+
 - Quick, complete, and single-operation benchmark profiles.
 - Sequential read and write measurements with `F_NOCACHE`.
-- Separate transfer and durable-write results, including drive synchronization.
+- Separate transfer and durable-write timing, including drive synchronization.
 - 4K random read and write measurements in the complete profile.
 - Data-integrity verification outside the timed read measurement.
-- Negotiated USB-link, free-space, filesystem, and device metadata inspection.
-- Local SQLite history, recoverable Trash, guided comparisons, and CSV export.
-- English-first interface with built-in Italian localization.
-- Native Apple Silicon release build and drag-to-Applications DMG packaging.
+- Negotiated USB-link, hub path, free-space, filesystem, and device metadata.
+- Device and cable modes with an explicit reference component.
+- Guided comparisons that flag mismatched test setups.
+- Local SQLite history, recoverable Trash, and CSV export.
 
-## Safety model
+## Safety by design
 
-USB Bench does not format, unmount, or access raw disks. A benchmark creates one
-uniquely named `.usbbench-<UUID>.tmp` file inside the selected directory. The
-engine removes only that file when the test completes, fails, or is cancelled.
-Existing files are never opened, read, modified, or deleted.
+USB Bench does not format, unmount, or access raw disks. Each benchmark creates
+one uniquely named `.usbbench-<UUID>.tmp` file inside the selected directory.
+The engine removes only that file when the test completes, fails, or is
+cancelled. Existing files are never opened, read, modified, or deleted.
 
-The automated tests use isolated temporary directories and include a sentinel
-file check to enforce this boundary.
+The automated test suite uses isolated temporary directories and a sentinel
+file to enforce this boundary.
+
+## Private and local
+
+Results remain in:
+
+```text
+~/Library/Application Support/USB Bench/results.sqlite3
+```
+
+There is no telemetry, analytics SDK, account system, advertising, or cloud
+dependency. The interface is English-first and includes Italian localization.
 
 ## Requirements
 
 - macOS 14 or later
 - Apple Silicon Mac
 - Xcode with Swift 6 or later for development
-- Apple Developer Program membership only for public Developer ID releases
+- Apple Developer Program membership only for official Developer ID releases
 
-## Build and test
+## Build and verify
 
 ```sh
 swift test --disable-sandbox
@@ -47,10 +111,15 @@ swift test --disable-sandbox
 ```
 
 `package_app.sh` creates an ad-hoc-signed local test DMG under `dist/`. It is
-appropriate for local validation, but a public release should be signed with a
-Developer ID Application certificate and notarized by Apple.
+appropriate for local validation only. Official downloads must be signed with
+a Developer ID Application certificate, notarized by Apple, stapled, and
+verified before publication.
 
-## Project layout
+See the [development guide](docs/DEVELOPMENT.md) for the toolchain and project
+structure, and the [release guide](docs/RELEASE.md) for the full signing and
+notarization procedure.
+
+## Architecture
 
 ```text
 Sources/USBBenchApp/       SwiftUI application and localization
@@ -58,26 +127,19 @@ Sources/USBBenchCore/      benchmark engine, models, SQLite, system inspection
 Sources/USBBenchProbe/     command-line diagnostics
 Tests/                     non-destructive automated tests
 Packaging/                 application bundle metadata and icon configuration
+Assets/                    canonical PNG project identity and application icon
 scripts/                   build, verification, signing, and notarization
-docs/                      development, release, and GitHub Pages content
-.github/workflows/         continuous integration and release automation
+docs/                      development guide, release guide, and landing page
+.github/workflows/         CI, GitHub Pages, and notarized release automation
 ```
 
-Results are stored locally at:
+## Contributing and security
 
-```text
-~/Library/Application Support/USB Bench/results.sqlite3
-```
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before
+opening a pull request. Report vulnerabilities through the process documented
+in [SECURITY.md](SECURITY.md).
 
-USB Bench has no telemetry, analytics, account system, or cloud dependency.
-
-## Documentation
-
-- [Development guide](docs/DEVELOPMENT.md)
-- [Release and notarization guide](docs/RELEASE.md)
-- [Contributing](CONTRIBUTING.md)
-- [Security policy](SECURITY.md)
-- [Changelog](CHANGELOG.md)
+Notable changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

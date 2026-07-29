@@ -6,23 +6,82 @@
   <meta name="color-scheme" content="light dark">
   <meta
     name="description"
-    content="USB Bench is a free and open-source native macOS app by BinaryBears for testing storage devices and USB cables."
+    content="USB Bench is a free, open-source native macOS benchmark for testing USB SSDs, HDDs, flash drives, cables, hubs, enclosures, and ports."
   >
+  <meta name="author" content="BinaryBears LLC">
+  <meta name="application-name" content="USB Bench">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://binarybearsllc.github.io/USB-Bench/">
+  <link rel="icon" type="image/png" href="assets/usb-bench-icon.png">
+  <link rel="apple-touch-icon" href="assets/usb-bench-icon.png">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta
     http-equiv="Content-Security-Policy"
-    content="default-src 'none'; connect-src https://api.github.com; img-src data:; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; object-src 'none'"
+    content="default-src 'none'; connect-src https://api.github.com; img-src 'self' data:; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; object-src 'none'"
   >
   <meta name="theme-color" id="themeColor" content="#f5f5f7">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="USB Bench · Test cables and drives on macOS">
+  <meta property="og:site_name" content="USB Bench">
+  <meta property="og:url" content="https://binarybearsllc.github.io/USB-Bench/">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="it_IT">
+  <meta property="og:title" content="USB Bench for macOS · Test USB drives, SSDs, HDDs, and cables">
   <meta
     property="og:description"
-    content="Measure USB storage, compare cables, and understand the negotiated connection speed."
+    content="Measure storage performance, compare USB cables, and identify the real connection bottleneck with a safe, native, open-source macOS app."
   >
-  <meta name="twitter:card" content="summary">
+  <meta
+    property="og:image"
+    content="https://binarybearsllc.github.io/USB-Bench/assets/usb-bench-hero.jpg"
+  >
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta
+    property="og:image:alt"
+    content="Generic USB storage devices and cables arranged for a performance benchmark"
+  >
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="USB Bench for macOS">
+  <meta
+    name="twitter:description"
+    content="Benchmark USB SSDs, HDDs, flash drives, cables, hubs, enclosures, and ports on Apple Silicon."
+  >
+  <meta
+    name="twitter:image"
+    content="https://binarybearsllc.github.io/USB-Bench/assets/usb-bench-hero.jpg"
+  >
+  <meta
+    name="twitter:image:alt"
+    content="Generic USB storage devices and cables arranged for a performance benchmark"
+  >
   <meta name="github-repository" content="BinaryBearsLLC/USB-Bench">
-  <title>USB Bench · BinaryBears</title>
+  <title>USB Bench for macOS · USB SSD, HDD, Drive, and Cable Benchmark</title>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "USB Bench",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "macOS 14 or later",
+      "softwareVersion": "1.2.0",
+      "description": "A native, open-source macOS benchmark for USB storage devices, cables, hubs, enclosures, and ports.",
+      "url": "https://binarybearsllc.github.io/USB-Bench/",
+      "image": "https://binarybearsllc.github.io/USB-Bench/assets/usb-bench-icon.png",
+      "screenshot": "https://binarybearsllc.github.io/USB-Bench/assets/usb-bench-app.jpg",
+      "downloadUrl": "https://github.com/BinaryBearsLLC/USB-Bench/releases",
+      "license": "https://opensource.org/license/mit",
+      "author": {
+        "@type": "Organization",
+        "name": "BinaryBears LLC",
+        "url": "https://binarybears.com"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+  </script>
   <script>
     document.documentElement.classList.add("js");
     try {
@@ -195,39 +254,12 @@
     }
 
     .brand-mark {
-      position: relative;
+      display: block;
       width: 34px;
       height: 34px;
-      overflow: hidden;
-      border: 1px solid var(--line);
       border-radius: 10px;
-      background: var(--surface-solid);
+      object-fit: cover;
       box-shadow: var(--shadow-soft);
-    }
-
-    .brand-mark::before,
-    .brand-mark::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-
-    .brand-mark::before {
-      left: 7px;
-      width: 14px;
-      height: 7px;
-      border-radius: 3px 1px 1px 3px;
-      background: var(--accent);
-    }
-
-    .brand-mark::after {
-      left: 20px;
-      width: 7px;
-      height: 11px;
-      border: 2px solid var(--accent);
-      border-left-width: 3px;
-      border-radius: 2px;
     }
 
     .brand-copy {
@@ -1558,7 +1590,14 @@
   <header class="site-header">
     <div class="header-inner">
       <a class="brand" href="#top" aria-label="USB Bench by BinaryBears">
-        <span class="brand-mark" aria-hidden="true"></span>
+        <img
+          class="brand-mark"
+          src="assets/usb-bench-icon.png"
+          width="34"
+          height="34"
+          alt=""
+          aria-hidden="true"
+        >
         <span class="brand-copy">
           <strong>USB Bench</strong>
           <small>by BinaryBears</small>
@@ -1678,7 +1717,7 @@
                     <div class="drive-info">
                       <span class="drive-symbol"></span>
                       <span class="drive-copy">
-                        <strong>Lexar ARMOR 700</strong>
+                        <strong>External NVMe SSD</strong>
                         <span data-i18n="mockExternalSSD">SSD esterno · exFAT</span>
                       </span>
                     </div>
@@ -1811,10 +1850,10 @@
             <span class="feature-number" data-i18n="featureNumberDetails">04 · DETTAGLI</span>
             <h3 data-i18n="featureDetailsTitle">Dettagli completi, interfaccia leggera.</h3>
             <p data-i18n="featureDetailsBody">
-              Il nome comunicato dall’hardware, come SanDisk 3.2Gen1, viene
+              Il nome comunicato dall’hardware, come External USB SSD, viene
               salvato nel database ma compare soltanto quando apri le informazioni.
             </p>
-            <div class="feature-decoration" aria-hidden="true">SanDisk 3.2Gen1</div>
+            <div class="feature-decoration" aria-hidden="true">External USB SSD</div>
           </article>
         </div>
       </div>
@@ -2027,7 +2066,7 @@
             "Profili, dimensione del test, Mac, unità e link negoziato vengono controllati prima di interpretare le differenze.",
           featureDetailsTitle: "Dettagli completi, interfaccia leggera.",
           featureDetailsBody:
-            "Il nome comunicato dall’hardware, come SanDisk 3.2Gen1, viene salvato nel database ma compare soltanto quando apri le informazioni.",
+            "Il nome comunicato dall’hardware, come External USB SSD, viene salvato nel database ma compare soltanto quando apri le informazioni.",
           methodKicker: "Metodo semplice",
           methodTitle: "Cambia il cavo. Non cambiare il test.",
           methodLead:
@@ -2122,7 +2161,7 @@
             "Profiles, test size, Mac, drive, and negotiated link are checked before interpreting differences.",
           featureDetailsTitle: "Complete details, lightweight interface.",
           featureDetailsBody:
-            "The hardware-reported name, such as SanDisk 3.2Gen1, is saved in the database but appears only when you open result information.",
+            "The hardware-reported name, such as External USB SSD, is saved in the database but appears only when you open result information.",
           methodKicker: "Simple method",
           methodTitle: "Change the cable. Keep the test.",
           methodLead:
