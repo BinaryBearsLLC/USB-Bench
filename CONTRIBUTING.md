@@ -21,21 +21,12 @@ open-source repository.
 Run these commands from the repository root:
 
 ```sh
-swift format lint --recursive --parallel --strict \
-  Sources Tests Package.swift
-swift test --disable-sandbox
-./scripts/verify_brand_assets.sh
+./scripts/check_all.sh
 ```
 
-Changes to packaging must also pass:
-
-```sh
-./scripts/package_app.sh
-./scripts/verify_release.sh
-```
-
-Local DMGs use an ad-hoc signature. Do not create a public release from an
-ad-hoc-signed artifact.
+This command checks formatting, metadata, shell syntax, brand assets, tests,
+packaging, and the generated DMG. Local DMGs use an ad-hoc signature. Do not
+create a public release from an ad-hoc-signed artifact.
 
 ## Storage-safety invariants
 

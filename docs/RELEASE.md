@@ -18,12 +18,7 @@ notarization.
 Run all checks before creating a tag:
 
 ```sh
-swift format lint --recursive --parallel --strict \
-  Sources Tests Package.swift
-swift test --disable-sandbox
-./scripts/verify_brand_assets.sh
-./scripts/package_app.sh
-./scripts/verify_release.sh
+./scripts/check_all.sh
 ```
 
 The local packaging command uses an ad-hoc signature by default. Never publish
@@ -154,39 +149,58 @@ base64 -i AuthKey_ABC123.p8 | pbcopy
 Never commit `.p12`, `.p8`, passwords, Keychain profiles, or encoded credential
 values.
 
-## 5. Publish a release
+## 5. Prepare a release
 
 1. Update `CFBundleShortVersionString` and `CFBundleVersion` in
    `Packaging/Info.plist`.
 2. Move relevant changelog entries from `Unreleased` to the new version.
-3. Run every local check and confirm the `CI` workflow is green on `main`.
-4. Create a tag whose value exactly matches the application version.
+3. Run `./scripts/check_all.sh`, commit the release preparation, and push
+   `main`.
+4. Confirm that the `CI` workflow is green on the exact `main` commit.
+5. Create and verify a signed tag whose value exactly matches the application
+   version, then push only that tag.
 
 ```sh
-git tag -s v1.2.0 -m "USB Bench 1.2.0"
-git push origin main
-git push origin v1.2.0
+git tag -s v1.2.1 -m "USB Bench 1.2.1"
+git verify-tag v1.2.1
+git push origin v1.2.1
 ```
 
-Use a signed tag when a signing key is configured. An unsigned annotated tag is
-acceptable for development, but should not be used for the official release.
+Pushing a tag does not publish anything. It only makes the signed release point
+available to GitHub.
 
-The release workflow verifies the tag/version match, runs tests, imports the
-certificate into a temporary Keychain, notarizes the DMG, publishes the DMG and
-SHA-256 file, and removes the temporary Keychain.
+## 6. Publish when you decide
 
-Do not push a release tag until all Apple and GitHub secrets are configured.
+1. Open the repository's **Actions** tab.
+2. Select **Release notarized DMG**.
+3. Select **Run workflow**.
+4. Keep the branch set to `main`, enter the version without the `v` prefix,
+   and start the workflow.
 
-## 6. GitHub Pages
+This manual action is the only release trigger. The workflow requires the
+matching signed tag, verifies that the tag belongs to `main`, checks the
+application version, runs tests, imports Apple credentials into an isolated
+temporary Keychain, signs and notarizes the DMG, validates Gatekeeper, and only
+then creates the public GitHub Release with the DMG and SHA-256 file.
+
+If any check, signing operation, or notarization step fails, no GitHub Release
+is published. Re-running an already published version is also rejected instead
+of overwriting its artifacts.
+
+## 7. GitHub Pages
 
 The landing page is published from `docs/index.html` by the
 `Publish GitHub Pages` workflow.
 
-After the workflow is committed:
+Before the first Pages workflow run:
 
 1. Open **Settings → Pages**.
-2. Select **GitHub Actions** as the source.
-3. Run the Pages workflow manually once, or push a change under `docs/`.
+2. Under **Build and deployment**, select **GitHub Actions** as the source.
+3. Run the Pages workflow manually once.
+
+This is a one-time repository setting. After it is enabled, pushes that modify
+`docs/` publish the website automatically. Source-code-only changes do not
+redeploy the website.
 
 The page reads the latest public GitHub Release and links its Apple Silicon DMG.
 It falls back to the Releases page if the public API is unavailable.

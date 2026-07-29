@@ -17,6 +17,10 @@ The project follows [Semantic Versioning](https://semver.org/).
 - Replaced runtime icon generation with one canonical PNG used by packaging,
   the website, and the repository documentation.
 - Documented SSH source signing and local Developer ID identity verification.
+- Made releases an explicit manual action guarded by a maintainer-signed tag.
+- Made Swift formatting checks compatible with both local and GitHub runner
+  toolchains.
+- Isolated Apple release credentials in a temporary Keychain during automation.
 
 ## 1.2.0
 

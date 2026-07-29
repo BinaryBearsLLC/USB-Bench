@@ -20,7 +20,9 @@ The core does not depend on the interface:
 - Xcode with Swift 6 or later
 
 The current public baseline was verified with Xcode 26.6 and Apple Swift 6.3.3.
-The package declares Swift tools version 6.0 and Swift language mode 5.
+CI also validates it with the default Xcode 16.4 toolchain on GitHub's
+`macos-15` runner. The package declares Swift tools version 6.0 and Swift
+language mode 5.
 
 ## Local checks
 
@@ -31,24 +33,30 @@ swift format format --recursive --in-place \
   Sources Tests Package.swift
 ```
 
-Lint and test:
+Run the complete local quality gate:
 
 ```sh
-swift format lint --recursive --parallel --strict \
-  Sources Tests Package.swift
-swift test --disable-sandbox
-./scripts/verify_brand_assets.sh
+./scripts/check_all.sh
 ```
 
-Build and verify the local DMG:
+This checks formatting, metadata, shell syntax, canonical brand assets, tests,
+packaging, and the generated DMG. The DMG is ad-hoc signed and is for local
+validation only. The verification script mounts it read-only and checks its
+bundle metadata, signature, Apple Silicon architecture, and Applications
+symlink.
 
-```sh
-./scripts/package_app.sh
-./scripts/verify_release.sh
-```
+## Change workflow
 
-The verification script mounts the DMG read-only and checks its bundle metadata,
-signature, Apple Silicon architecture, and Applications symlink.
+Use one focused branch and commit per logical change:
+
+1. Make the source or documentation change.
+2. Run `./scripts/check_all.sh`.
+3. Review `git diff` and create a signed English-language commit.
+4. Push the branch and wait for the `CI` workflow to pass.
+5. Merge only after required checks are green.
+
+A source-code push does not create a GitHub Release. Releases are a separate,
+explicitly triggered process described in [RELEASE.md](RELEASE.md).
 
 ## Storage-safety invariants
 

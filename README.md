@@ -105,14 +105,13 @@ dependency. The interface is English-first and includes Italian localization.
 ## Build and verify
 
 ```sh
-swift test --disable-sandbox
-./scripts/package_app.sh
-./scripts/verify_release.sh
+./scripts/check_all.sh
 ```
 
-`package_app.sh` creates an ad-hoc-signed local test DMG under `dist/`. It is
-appropriate for local validation only. Official downloads must be signed with
-a Developer ID Application certificate, notarized by Apple, stapled, and
+The quality gate checks formatting, tests, assets, packaging, and the generated
+DMG. Local packages are ad-hoc signed and are appropriate for validation only.
+Official downloads are created only by the manually triggered release workflow
+from a signed tag, then Developer ID signed, notarized by Apple, stapled, and
 verified before publication.
 
 See the [development guide](docs/DEVELOPMENT.md) for the toolchain and project
