@@ -1,0 +1,150 @@
+name: Release notarized DMG
+
+on:
+  push:
+    tags:
+      - v*
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Sign, notarize, and publish
+    runs-on: macos-15
+    timeout-minutes: 35
+    env:
+      NOTARY_PROFILE: usb-bench-notary-${{ github.run_id }}
+
+    steps:
+      - name: Check out the tagged source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate release configuration
+        shell: bash
+        env:
+          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          required=(
+            APPLE_CERTIFICATE_P12_BASE64
+            APPLE_CERTIFICATE_PASSWORD
+            APPLE_SIGNING_IDENTITY
+            APPLE_API_KEY_BASE64
+            APPLE_API_KEY_ID
+            APPLE_API_ISSUER_ID
+          )
+          for name in "${required[@]}"; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Required repository secret $name is not configured."
+              exit 1
+            fi
+          done
+
+      - name: Verify the tag matches the application version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(plutil -extract CFBundleShortVersionString raw -o - Packaging/Info.plist)"
+          expected_tag="v${version}"
+          if [[ "$GITHUB_REF_NAME" != "$expected_tag" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match $expected_tag."
+            exit 1
+          fi
+
+      - name: Check Swift formatting
+        run: |
+          swift format lint --recursive --parallel --strict \
+            Sources Tests Package.swift scripts/make_icon.swift
+
+      - name: Run the test suite
+        run: swift test --disable-sandbox
+
+      - name: Import the Developer ID certificate
+        shell: bash
+        env:
+          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          set -euo pipefail
+          certificate_path="$RUNNER_TEMP/developer-id.p12"
+          keychain_path="$RUNNER_TEMP/usb-bench-signing.keychain-db"
+          keychain_password="$(uuidgen)"
+
+          printf '%s' "$APPLE_CERTIFICATE_P12_BASE64" |
+            /usr/bin/base64 --decode > "$certificate_path"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security default-keychain -d user -s "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" \
+            -k "$keychain_path" \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s \
+            -k "$keychain_password" \
+            "$keychain_path"
+          security find-identity -v -p codesigning "$keychain_path" |
+            grep -F -- "$APPLE_SIGNING_IDENTITY"
+          rm -f "$certificate_path"
+
+      - name: Store temporary notarization credentials
+        shell: bash
+        env:
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          api_key_path="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
+          printf '%s' "$APPLE_API_KEY_BASE64" |
+            /usr/bin/base64 --decode > "$api_key_path"
+          xcrun notarytool store-credentials "$NOTARY_PROFILE" \
+            --key "$api_key_path" \
+            --key-id "$APPLE_API_KEY_ID" \
+            --issuer "$APPLE_API_ISSUER_ID"
+          rm -f "$api_key_path"
+
+      - name: Build, sign, notarize, and verify
+        env:
+          SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: ./scripts/notarize_release.sh
+
+      - name: Publish the GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="$(plutil -extract CFBundleShortVersionString raw -o - Packaging/Info.plist)"
+          dmg_path="dist/USB-Bench-${version}-Apple-Silicon.dmg"
+          gh release create "$GITHUB_REF_NAME" \
+            "$dmg_path" \
+            "${dmg_path}.sha256" \
+            --verify-tag \
+            --generate-notes \
+            --title "USB Bench ${version}"
+
+      - name: Remove temporary credentials
+        if: always()
+        shell: bash
+        run: |
+          rm -f \
+            "$RUNNER_TEMP/developer-id.p12" \
+            "$RUNNER_TEMP"/AuthKey_*.p8
+          keychain_path="$RUNNER_TEMP/usb-bench-signing.keychain-db"
+          if [[ -f "$keychain_path" ]]; then
+            security delete-keychain "$keychain_path" || true
+          fi
