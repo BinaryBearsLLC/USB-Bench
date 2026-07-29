@@ -19,8 +19,9 @@ Run all checks before creating a tag:
 
 ```sh
 swift format lint --recursive --parallel --strict \
-  Sources Tests Package.swift scripts/make_icon.swift
+  Sources Tests Package.swift
 swift test --disable-sandbox
+./scripts/verify_brand_assets.sh
 ./scripts/package_app.sh
 ./scripts/verify_release.sh
 ```

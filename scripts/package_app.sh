@@ -15,7 +15,7 @@ VERSION="$(/usr/bin/plutil -extract CFBundleShortVersionString raw -o - "$INFO_P
 SIGNING_IDENTITY="${SIGNING_IDENTITY:--}"
 APP_PATH="$BUILD_ROOT/$APP_NAME.app"
 DMG_PATH="$OUTPUT_DIR/USB-Bench-$VERSION-Apple-Silicon.dmg"
-ICON_MASTER="$BUILD_ROOT/AppIcon-1024.png"
+ICON_MASTER="$PROJECT_ROOT/Assets/USB-Bench-Icon.png"
 ICONSET_PATH="$BUILD_ROOT/AppIcon.iconset"
 ASSET_CATALOG="$BUILD_ROOT/IconAssets.xcassets"
 ASSET_OUTPUT="$BUILD_ROOT/compiled-assets"
@@ -51,7 +51,6 @@ chmod 755 "$APP_PATH/Contents/MacOS/$EXECUTABLE_NAME"
 ditto "$PROJECT_ROOT/Packaging/Info.plist" "$APP_PATH/Contents/Info.plist"
 ditto "$PROJECT_ROOT/Packaging/PkgInfo" "$APP_PATH/Contents/PkgInfo"
 
-xcrun swift "$PROJECT_ROOT/scripts/make_icon.swift" "$ICON_MASTER"
 sips -z 16 16 "$ICON_MASTER" --out "$ICONSET_PATH/icon_16x16.png" >/dev/null
 sips -z 32 32 "$ICON_MASTER" --out "$ICONSET_PATH/icon_16x16@2x.png" >/dev/null
 sips -z 32 32 "$ICON_MASTER" --out "$ICONSET_PATH/icon_32x32.png" >/dev/null

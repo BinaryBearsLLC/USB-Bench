@@ -28,15 +28,16 @@ Format source files:
 
 ```sh
 swift format format --recursive --in-place \
-  Sources Tests Package.swift scripts/make_icon.swift
+  Sources Tests Package.swift
 ```
 
 Lint and test:
 
 ```sh
 swift format lint --recursive --parallel --strict \
-  Sources Tests Package.swift scripts/make_icon.swift
+  Sources Tests Package.swift
 swift test --disable-sandbox
+./scripts/verify_brand_assets.sh
 ```
 
 Build and verify the local DMG:
@@ -88,3 +89,19 @@ The public version and build number are defined only in
 - `CFBundleVersion` is the monotonically increasing build number.
 
 Packaging and release automation read the version from that file.
+
+## Brand assets
+
+`Assets/USB-Bench-Icon.png` is the canonical 1024-by-1024 PNG for the
+application icon and the public project identity. Packaging derives the macOS
+icon set directly from this file.
+
+The optimized website icon is generated from the same master:
+
+```sh
+./scripts/sync_brand_assets.sh
+```
+
+Do not edit `docs/assets/usb-bench-icon.png` independently. CI verifies its
+dimensions and compares it with a freshly generated derivative of the
+canonical icon.

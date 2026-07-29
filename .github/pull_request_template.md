@@ -4,7 +4,8 @@ Describe the change and the user-visible or technical outcome.
 
 ## Validation
 
-- [ ] `swift format lint --recursive --parallel --strict Sources Tests Package.swift scripts/make_icon.swift`
+- [ ] `swift format lint --recursive --parallel --strict Sources Tests Package.swift`
+- [ ] `./scripts/verify_brand_assets.sh`
 - [ ] `swift test --disable-sandbox`
 - [ ] Packaging checks completed when release or bundle behavior changed
 - [ ] No credentials, build output, local databases, or private device data added
