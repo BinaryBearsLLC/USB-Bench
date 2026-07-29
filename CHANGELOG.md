@@ -11,6 +11,12 @@ The project follows [Semantic Versioning](https://semver.org/).
 - Established the public MIT-licensed repository baseline.
 - Made English the default localization while preserving Italian support.
 - Standardized source formatting with the Swift formatter included in Xcode.
+- Replaced third-party product-name examples with generic storage labels.
+- Added original brand-neutral project visuals and expanded landing-page
+  metadata for search and social previews.
+- Replaced runtime icon generation with one canonical PNG used by packaging,
+  the website, and the repository documentation.
+- Documented SSH source signing and local Developer ID identity verification.
 
 ## 1.2.0
 
