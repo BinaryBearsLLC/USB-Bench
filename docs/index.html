@@ -1,0 +1,2461 @@
+<!doctype html>
+<html lang="it" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta
+    name="description"
+    content="USB Bench is a free and open-source native macOS app by BinaryBears for testing storage devices and USB cables."
+  >
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'none'; connect-src https://api.github.com; img-src data:; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; object-src 'none'"
+  >
+  <meta name="theme-color" id="themeColor" content="#f5f5f7">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="USB Bench · Test cables and drives on macOS">
+  <meta
+    property="og:description"
+    content="Measure USB storage, compare cables, and understand the negotiated connection speed."
+  >
+  <meta name="twitter:card" content="summary">
+  <meta name="github-repository" content="BinaryBearsLLC/USB-Bench">
+  <title>USB Bench · BinaryBears</title>
+  <script>
+    document.documentElement.classList.add("js");
+    try {
+      document.documentElement.dataset.theme =
+        localStorage.getItem("usbBenchTheme") || "auto";
+      document.documentElement.lang =
+        localStorage.getItem("usbBenchLanguage")
+        || (navigator.language.toLowerCase().startsWith("it") ? "it" : "en");
+    } catch (_) {}
+  </script>
+  <style>
+    :root {
+      --page: #f5f5f7;
+      --page-elevated: rgba(255, 255, 255, 0.76);
+      --surface: rgba(255, 255, 255, 0.82);
+      --surface-solid: #ffffff;
+      --surface-soft: #ececf1;
+      --text: #1d1d1f;
+      --muted: #66666d;
+      --faint: #8a8a91;
+      --line: rgba(20, 20, 25, 0.11);
+      --line-strong: rgba(20, 20, 25, 0.18);
+      --accent: #087cf0;
+      --accent-strong: #0067d8;
+      --accent-soft: rgba(8, 124, 240, 0.11);
+      --green: #28a745;
+      --orange: #e97b12;
+      --shadow: 0 26px 80px rgba(16, 24, 40, 0.11);
+      --shadow-soft: 0 12px 38px rgba(16, 24, 40, 0.08);
+      --radius-xl: 30px;
+      --radius-lg: 22px;
+      --radius-md: 15px;
+      --content: 1180px;
+      --header-height: 76px;
+    }
+
+    :root[data-theme="dark"] {
+      --page: #101114;
+      --page-elevated: rgba(24, 25, 29, 0.82);
+      --surface: rgba(29, 30, 35, 0.82);
+      --surface-solid: #1c1d21;
+      --surface-soft: #26272d;
+      --text: #f5f5f7;
+      --muted: #b2b2ba;
+      --faint: #85858f;
+      --line: rgba(255, 255, 255, 0.10);
+      --line-strong: rgba(255, 255, 255, 0.18);
+      --accent: #2997ff;
+      --accent-strong: #58adff;
+      --accent-soft: rgba(41, 151, 255, 0.15);
+      --green: #4bc768;
+      --orange: #ff9f45;
+      --shadow: 0 30px 90px rgba(0, 0, 0, 0.34);
+      --shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.24);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --page: #101114;
+        --page-elevated: rgba(24, 25, 29, 0.82);
+        --surface: rgba(29, 30, 35, 0.82);
+        --surface-solid: #1c1d21;
+        --surface-soft: #26272d;
+        --text: #f5f5f7;
+        --muted: #b2b2ba;
+        --faint: #85858f;
+        --line: rgba(255, 255, 255, 0.10);
+        --line-strong: rgba(255, 255, 255, 0.18);
+        --accent: #2997ff;
+        --accent-strong: #58adff;
+        --accent-soft: rgba(41, 151, 255, 0.15);
+        --green: #4bc768;
+        --orange: #ff9f45;
+        --shadow: 0 30px 90px rgba(0, 0, 0, 0.34);
+        --shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.24);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--page);
+      overflow-x: hidden;
+      overflow-x: clip;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      overflow-x: hidden;
+      overflow-x: clip;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 77% 8%, var(--accent-soft), transparent 25rem),
+        radial-gradient(circle at 4% 34%, rgba(119, 73, 255, 0.07), transparent 23rem),
+        var(--page);
+      font-family:
+        -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+        "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    button,
+    a {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    ::selection {
+      color: #ffffff;
+      background: var(--accent);
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: 12px;
+      left: 12px;
+      padding: 10px 14px;
+      color: #ffffff;
+      background: var(--accent);
+      border-radius: 10px;
+      transform: translateY(-150%);
+      transition: transform 180ms ease;
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+    }
+
+    .site-header {
+      position: sticky;
+      z-index: 50;
+      top: 0;
+      min-height: var(--header-height);
+      border-bottom: 1px solid var(--line);
+      background: var(--page-elevated);
+      backdrop-filter: saturate(180%) blur(22px);
+      -webkit-backdrop-filter: saturate(180%) blur(22px);
+    }
+
+    .header-inner {
+      width: min(calc(100% - 40px), var(--content));
+      min-height: var(--header-height);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      min-width: max-content;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .brand-mark::before {
+      left: 7px;
+      width: 14px;
+      height: 7px;
+      border-radius: 3px 1px 1px 3px;
+      background: var(--accent);
+    }
+
+    .brand-mark::after {
+      left: 20px;
+      width: 7px;
+      height: 11px;
+      border: 2px solid var(--accent);
+      border-left-width: 3px;
+      border-radius: 2px;
+    }
+
+    .brand-copy {
+      display: grid;
+      line-height: 1.05;
+    }
+
+    .brand-copy strong {
+      font-size: 15px;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-copy small {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .main-nav {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .main-nav a {
+      padding: 8px 11px;
+      color: var(--muted);
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition:
+        color 160ms ease,
+        background 160ms ease;
+    }
+
+    .main-nav a:hover {
+      color: var(--text);
+      background: var(--surface);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .theme-button,
+    .language-switch {
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--surface);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+    }
+
+    .theme-button {
+      min-width: 86px;
+      padding: 0 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      cursor: pointer;
+      transition:
+        border-color 160ms ease,
+        transform 160ms ease;
+    }
+
+    .theme-button:hover {
+      border-color: var(--line-strong);
+      transform: translateY(-1px);
+    }
+
+    .theme-symbol {
+      color: var(--accent);
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .theme-name {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .language-switch {
+      padding: 3px;
+      display: inline-flex;
+      gap: 2px;
+    }
+
+    .language-switch button {
+      min-width: 34px;
+      min-height: 28px;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      transition:
+        color 160ms ease,
+        background 160ms ease,
+        box-shadow 160ms ease;
+    }
+
+    .language-switch button[aria-pressed="true"] {
+      color: #ffffff;
+      background: var(--accent);
+      box-shadow: 0 3px 10px rgba(0, 122, 255, 0.25);
+    }
+
+    .container {
+      width: min(calc(100% - 40px), var(--content));
+      margin: 0 auto;
+    }
+
+    .hero {
+      position: relative;
+      min-height: calc(100vh - var(--header-height));
+      padding: 76px 0 64px;
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(520px, 1.08fr);
+      align-items: center;
+      gap: 58px;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      top: 11%;
+      right: -5%;
+      width: 500px;
+      height: 500px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      opacity: 0.44;
+      animation: orbit 24s linear infinite;
+    }
+
+    .eyebrow {
+      width: fit-content;
+      margin: 0 0 20px;
+      padding: 7px 10px 7px 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .eyebrow-dot {
+      position: relative;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 14%, transparent);
+    }
+
+    .eyebrow-dot::after {
+      content: "";
+      position: absolute;
+      inset: -5px;
+      border: 1px solid var(--green);
+      border-radius: inherit;
+      animation: pulse-ring 2.4s ease-out infinite;
+    }
+
+    .hero h1 {
+      max-width: 650px;
+      margin: 0;
+      font-size: clamp(50px, 6.2vw, 82px);
+      font-weight: 730;
+      letter-spacing: -0.065em;
+      line-height: 0.98;
+    }
+
+    .accent-text {
+      color: var(--accent);
+    }
+
+    .hero-lead {
+      max-width: 610px;
+      margin: 26px 0 0;
+      color: var(--muted);
+      font-size: clamp(18px, 2vw, 22px);
+      letter-spacing: -0.02em;
+      line-height: 1.45;
+    }
+
+    .hero-actions {
+      margin-top: 32px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 11px;
+    }
+
+    .button {
+      min-height: 48px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      border: 1px solid transparent;
+      border-radius: 13px;
+      font-size: 14px;
+      font-weight: 750;
+      text-decoration: none;
+      transition:
+        transform 180ms ease,
+        box-shadow 180ms ease,
+        background 180ms ease,
+        border-color 180ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+    }
+
+    .button-primary {
+      color: #ffffff;
+      background: var(--accent);
+      box-shadow: 0 12px 30px rgba(0, 122, 255, 0.24);
+    }
+
+    .button-primary:hover {
+      background: var(--accent-strong);
+      box-shadow: 0 16px 36px rgba(0, 122, 255, 0.31);
+    }
+
+    .button-secondary {
+      border-color: var(--line);
+      background: var(--surface);
+    }
+
+    .button-secondary:hover {
+      border-color: var(--line-strong);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .button-arrow {
+      font-size: 17px;
+      line-height: 1;
+      transition: transform 180ms ease;
+    }
+
+    .button:hover .button-arrow {
+      transform: translateX(3px);
+    }
+
+    .release-meta {
+      min-height: 22px;
+      margin: 16px 0 0;
+      color: var(--faint);
+      font-size: 12px;
+    }
+
+    .release-meta strong {
+      color: var(--muted);
+    }
+
+    .hero-visual {
+      position: relative;
+      min-width: 0;
+      perspective: 1300px;
+    }
+
+    .visual-glow {
+      position: absolute;
+      z-index: -1;
+      inset: 10% 8%;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--accent) 19%, transparent);
+      filter: blur(70px);
+      animation: glow-breathe 5s ease-in-out infinite alternate;
+    }
+
+    .app-window {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-xl);
+      background: var(--surface-solid);
+      box-shadow: var(--shadow);
+      transform: rotateY(-4deg) rotateX(1.2deg);
+      transform-origin: center;
+      animation: window-float 7s ease-in-out infinite;
+    }
+
+    .window-bar {
+      height: 50px;
+      padding: 0 17px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .window-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #ff5f57;
+    }
+
+    .window-dot:nth-child(2) {
+      background: #febc2e;
+    }
+
+    .window-dot:nth-child(3) {
+      background: #28c840;
+    }
+
+    .window-title {
+      margin-left: 9px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .window-body {
+      min-height: 448px;
+      display: grid;
+      grid-template-columns: 128px 1fr;
+    }
+
+    .mock-sidebar {
+      padding: 19px 12px;
+      border-right: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .mock-brand {
+      margin: 0 8px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .mock-connector {
+      width: 20px;
+      height: 7px;
+      border-radius: 3px;
+      background: var(--muted);
+    }
+
+    .mock-nav-item {
+      height: 31px;
+      margin-bottom: 5px;
+      padding: 0 9px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      border-radius: 8px;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .mock-nav-item::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border: 1.5px solid currentColor;
+      border-radius: 2px;
+    }
+
+    .mock-nav-item.active {
+      color: #ffffff;
+      background: var(--accent);
+    }
+
+    .mock-main {
+      padding: 22px;
+      background:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px),
+        var(--page);
+      background-size: 28px 28px;
+    }
+
+    .mock-heading {
+      margin-bottom: 16px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .mock-heading-copy strong {
+      display: block;
+      font-size: 19px;
+      letter-spacing: -0.03em;
+    }
+
+    .mock-heading-copy span {
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .mock-filter {
+      padding: 5px 8px;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface-solid);
+      font-size: 8px;
+      font-weight: 700;
+    }
+
+    .preflight-card {
+      position: relative;
+      overflow: hidden;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .preflight-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .drive-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .drive-symbol {
+      position: relative;
+      width: 29px;
+      height: 22px;
+      border-radius: 7px;
+      background: var(--surface-soft);
+    }
+
+    .drive-symbol::after {
+      content: "";
+      position: absolute;
+      right: 5px;
+      bottom: 4px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .drive-copy strong,
+    .drive-copy span {
+      display: block;
+    }
+
+    .drive-copy strong {
+      font-size: 11px;
+    }
+
+    .drive-copy span {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 8px;
+    }
+
+    .speed-badge {
+      padding: 6px 8px;
+      color: var(--accent);
+      border-radius: 8px;
+      background: var(--accent-soft);
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .transfer-track {
+      position: relative;
+      height: 2px;
+      margin: 14px 0 12px;
+      overflow: hidden;
+      background: var(--line);
+    }
+
+    .transfer-track::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -25%;
+      width: 25%;
+      height: 100%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: transfer 2.2s ease-in-out infinite;
+    }
+
+    .preflight-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .preflight-grid div {
+      min-width: 0;
+    }
+
+    .preflight-grid span,
+    .preflight-grid strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .preflight-grid span {
+      color: var(--faint);
+      font-size: 7px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .preflight-grid strong {
+      margin-top: 3px;
+      font-size: 9px;
+    }
+
+    .metric-grid {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric-card {
+      position: relative;
+      min-height: 125px;
+      padding: 14px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 700;
+    }
+
+    .metric-value {
+      margin-top: 5px;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      font-size: 28px;
+      font-weight: 760;
+      letter-spacing: -0.055em;
+    }
+
+    .metric-value small {
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: 0;
+    }
+
+    .spark-bars {
+      position: absolute;
+      right: 13px;
+      bottom: 13px;
+      left: 13px;
+      height: 33px;
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .spark-bars i {
+      width: 100%;
+      height: var(--bar-height);
+      border-radius: 2px 2px 1px 1px;
+      background: var(--accent);
+      transform-origin: bottom;
+      animation: bar-grow 1.4s cubic-bezier(.2, .8, .2, 1) both;
+      animation-delay: var(--bar-delay);
+    }
+
+    .metric-card.read .spark-bars i {
+      background: #6f5cf5;
+    }
+
+    .system-strip {
+      padding: 9px 12px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .system-item {
+      min-width: 0;
+      padding: 6px 14px;
+      border-right: 1px solid var(--line);
+    }
+
+    .system-item:last-child {
+      border-right: 0;
+    }
+
+    .system-item strong,
+    .system-item span {
+      display: block;
+    }
+
+    .system-item strong {
+      font-size: 14px;
+      letter-spacing: -0.02em;
+    }
+
+    .system-item span {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .section {
+      padding: 110px 0;
+    }
+
+    .section-heading {
+      max-width: 750px;
+      margin-bottom: 42px;
+    }
+
+    .section-kicker {
+      margin: 0 0 12px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+    }
+
+    .section h2 {
+      margin: 0;
+      font-size: clamp(36px, 4.6vw, 58px);
+      font-weight: 730;
+      letter-spacing: -0.055em;
+      line-height: 1.02;
+    }
+
+    .section-heading > p:last-child {
+      max-width: 680px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 15px;
+    }
+
+    .feature-card {
+      position: relative;
+      min-height: 265px;
+      padding: 26px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+      transition:
+        transform 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+    }
+
+    .feature-card:hover {
+      z-index: 2;
+      border-color: var(--line-strong);
+      box-shadow: var(--shadow);
+      transform: translateY(-4px);
+    }
+
+    .feature-card.large {
+      grid-column: span 7;
+    }
+
+    .feature-card.medium {
+      grid-column: span 5;
+    }
+
+    .feature-number {
+      color: var(--faint);
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+    }
+
+    .feature-card h3 {
+      max-width: 450px;
+      margin: 28px 0 0;
+      font-size: clamp(25px, 3vw, 35px);
+      letter-spacing: -0.045em;
+      line-height: 1.08;
+    }
+
+    .feature-card p {
+      max-width: 520px;
+      margin: 13px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .feature-decoration {
+      position: absolute;
+      right: 24px;
+      bottom: 22px;
+      color: var(--accent);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .connection-decoration {
+      width: 126px;
+      height: 46px;
+      display: flex;
+      align-items: center;
+    }
+
+    .connection-decoration::before,
+    .connection-decoration::after {
+      content: "";
+      flex: none;
+      width: 24px;
+      height: 15px;
+      border: 3px solid currentColor;
+      border-radius: 5px;
+    }
+
+    .connection-decoration i {
+      position: relative;
+      width: 78px;
+      height: 2px;
+      overflow: hidden;
+      background: color-mix(in srgb, var(--accent) 25%, transparent);
+    }
+
+    .connection-decoration i::after {
+      content: "";
+      position: absolute;
+      width: 24px;
+      height: 100%;
+      background: currentColor;
+      animation: transfer 2s ease-in-out infinite;
+    }
+
+    .filter-decoration {
+      display: flex;
+      gap: 5px;
+    }
+
+    .filter-decoration span {
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface-solid);
+    }
+
+    .filter-decoration span:nth-child(2) {
+      color: #ffffff;
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .method-panel {
+      padding: 36px;
+      display: grid;
+      grid-template-columns: 0.8fr 1.2fr;
+      align-items: center;
+      gap: 58px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .method-copy h2 {
+      max-width: 480px;
+    }
+
+    .method-copy p {
+      max-width: 480px;
+      margin: 18px 0 0;
+      color: var(--muted);
+    }
+
+    .method-steps {
+      counter-reset: method;
+      display: grid;
+      gap: 1px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--line);
+    }
+
+    .method-step {
+      counter-increment: method;
+      min-height: 98px;
+      padding: 20px 22px;
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface-solid);
+    }
+
+    .method-step::before {
+      content: "0" counter(method);
+      color: var(--accent);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .method-step strong {
+      display: block;
+      font-size: 15px;
+    }
+
+    .method-step span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .safety-panel {
+      position: relative;
+      overflow: hidden;
+      padding: 52px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 54px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background:
+        radial-gradient(circle at 90% 10%, var(--accent-soft), transparent 22rem),
+        var(--surface-solid);
+      box-shadow: var(--shadow);
+    }
+
+    .safety-panel h2 {
+      max-width: 570px;
+    }
+
+    .safety-panel .section-kicker {
+      color: var(--green);
+    }
+
+    .safety-copy > p:last-child {
+      max-width: 550px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .safety-list {
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 10px;
+      list-style: none;
+    }
+
+    .safety-list li {
+      min-height: 58px;
+      padding: 13px 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--surface);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .check {
+      width: 22px;
+      height: 22px;
+      flex: none;
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+      border-radius: 50%;
+      background: var(--green);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .download-section {
+      padding-top: 70px;
+      padding-bottom: 120px;
+    }
+
+    .download-panel {
+      position: relative;
+      overflow: hidden;
+      padding: 70px 54px;
+      text-align: center;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-xl);
+      background: var(--surface-solid);
+      box-shadow: var(--shadow);
+    }
+
+    .download-panel::before,
+    .download-panel::after {
+      content: "";
+      position: absolute;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+    }
+
+    .download-panel::before {
+      top: -190px;
+      left: -150px;
+      width: 390px;
+      height: 390px;
+    }
+
+    .download-panel::after {
+      right: -110px;
+      bottom: -230px;
+      width: 440px;
+      height: 440px;
+    }
+
+    .download-panel > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .download-panel h2 {
+      max-width: 740px;
+      margin: 0 auto;
+    }
+
+    .download-panel > p {
+      max-width: 620px;
+      margin: 18px auto 0;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .download-panel .hero-actions {
+      justify-content: center;
+    }
+
+    .download-details {
+      min-height: 22px;
+      margin-top: 16px;
+      color: var(--faint);
+      font-size: 12px;
+    }
+
+    .site-footer {
+      padding: 30px 0 38px;
+      border-top: 1px solid var(--line);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .footer-brand {
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .footer-brand span {
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+      text-decoration: none;
+    }
+
+    .footer-links a:hover {
+      color: var(--text);
+    }
+
+    .reveal {
+      opacity: 1;
+      transform: none;
+    }
+
+    .js .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition:
+        opacity 650ms cubic-bezier(.2, .7, .2, 1),
+        transform 650ms cubic-bezier(.2, .7, .2, 1);
+    }
+
+    .js .reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    :focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent) 65%, transparent);
+      outline-offset: 3px;
+    }
+
+    @keyframes pulse-ring {
+      0% {
+        opacity: 0.8;
+        transform: scale(0.55);
+      }
+      80%,
+      100% {
+        opacity: 0;
+        transform: scale(1.5);
+      }
+    }
+
+    @keyframes window-float {
+      0%,
+      100% {
+        transform: rotateY(-4deg) rotateX(1.2deg) translateY(0);
+      }
+      50% {
+        transform: rotateY(-2deg) rotateX(0.5deg) translateY(-8px);
+      }
+    }
+
+    @keyframes glow-breathe {
+      from {
+        opacity: 0.55;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1.08);
+      }
+    }
+
+    @keyframes transfer {
+      from {
+        left: -28%;
+      }
+      to {
+        left: 108%;
+      }
+    }
+
+    @keyframes bar-grow {
+      from {
+        transform: scaleY(0.08);
+      }
+      to {
+        transform: scaleY(1);
+      }
+    }
+
+    @keyframes orbit {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 1020px) {
+      .main-nav {
+        display: none;
+      }
+
+      .header-controls {
+        margin-left: auto;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 60px;
+      }
+
+      .hero-copy {
+        max-width: 760px;
+      }
+
+      .hero-visual {
+        width: min(100%, 720px);
+        margin: 0 auto;
+      }
+
+      .system-strip {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .system-item:nth-child(2) {
+        border-right: 0;
+      }
+
+      .system-item:nth-child(-n + 2) {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .feature-card.large,
+      .feature-card.medium {
+        grid-column: span 6;
+      }
+
+      .method-panel,
+      .safety-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      :root {
+        --header-height: 68px;
+        --radius-xl: 22px;
+      }
+
+      .header-inner,
+      .container {
+        width: min(calc(100% - 28px), var(--content));
+      }
+
+      .brand-copy small,
+      .theme-name {
+        display: none;
+      }
+
+      .theme-button {
+        min-width: 38px;
+        width: 38px;
+        padding: 0;
+      }
+
+      .header-inner {
+        gap: 10px;
+      }
+
+      .hero {
+        min-height: auto;
+        padding-top: 54px;
+      }
+
+      .hero h1 {
+        font-size: clamp(46px, 14vw, 66px);
+      }
+
+      .hero-lead {
+        font-size: 18px;
+      }
+
+      .hero-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .app-window {
+        border-radius: 20px;
+        transform: none;
+        animation-name: mobile-float;
+      }
+
+      .window-body {
+        grid-template-columns: 1fr;
+      }
+
+      .mock-sidebar {
+        display: none;
+      }
+
+      .mock-main {
+        padding: 15px;
+      }
+
+      .metric-value {
+        font-size: 24px;
+      }
+
+      .system-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .system-item {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .system-item:last-child {
+        border-bottom: 0;
+      }
+
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .feature-card.large,
+      .feature-card.medium {
+        grid-column: auto;
+      }
+
+      .feature-card {
+        min-height: 255px;
+      }
+
+      .section {
+        padding: 78px 0;
+      }
+
+      .section-heading {
+        margin-bottom: 28px;
+      }
+
+      .section-heading > p:last-child {
+        font-size: 16px;
+      }
+
+      .method-panel,
+      .safety-panel {
+        padding: 24px;
+        gap: 34px;
+      }
+
+      .method-step {
+        padding: 17px;
+      }
+
+      .download-section {
+        padding-top: 35px;
+        padding-bottom: 80px;
+      }
+
+      .download-panel {
+        padding: 50px 22px;
+      }
+
+      .footer-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .footer-links {
+        flex-wrap: wrap;
+      }
+    }
+
+    @keyframes mobile-float {
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-5px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+
+      .js .reveal {
+        opacity: 1;
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="skip">Vai al contenuto</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#top" aria-label="USB Bench by BinaryBears">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-copy">
+          <strong>USB Bench</strong>
+          <small>by BinaryBears</small>
+        </span>
+      </a>
+
+      <nav class="main-nav" data-i18n-aria="primaryNav" aria-label="Navigazione principale">
+        <a href="#features" data-i18n="navFeatures">Funzioni</a>
+        <a href="#method" data-i18n="navMethod">Metodo</a>
+        <a href="#safety" data-i18n="navSafety">Sicurezza</a>
+        <a href="#download" data-i18n="navDownload">Download</a>
+      </nav>
+
+      <div class="header-controls">
+        <button
+          class="theme-button"
+          id="themeButton"
+          type="button"
+          data-i18n-aria="themeAria"
+          aria-label="Cambia aspetto"
+        >
+          <span class="theme-symbol" id="themeSymbol" aria-hidden="true">◐</span>
+          <span class="theme-name" id="themeName">Auto</span>
+        </button>
+
+        <div class="language-switch" role="group" data-i18n-aria="languageAria" aria-label="Lingua">
+          <button type="button" data-language="it" aria-pressed="true">IT</button>
+          <button type="button" data-language="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="container" id="top">
+      <section class="hero">
+        <div class="hero-copy reveal">
+          <p class="eyebrow">
+            <span class="eyebrow-dot" aria-hidden="true"></span>
+            <span id="latestVersion">v1.2.0</span>
+            <span aria-hidden="true">·</span>
+            <span data-i18n="free">Open source</span>
+            <span aria-hidden="true">·</span>
+            <span>Apple Silicon</span>
+          </p>
+
+          <h1>
+            <span data-i18n="heroTitle">Scopri quanto va la tua</span>
+            <span class="accent-text">USB.</span>
+          </h1>
+
+          <p class="hero-lead" data-i18n="heroLead">
+            Misura unità di archiviazione, confronta cavi e scopri il limite
+            reale del collegamento. Tutto sul tuo Mac, senza toccare i file esistenti.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary" id="downloadButton" href="#download">
+              <span data-i18n="downloadMac">Scarica per Mac</span>
+              <span class="button-arrow" aria-hidden="true">↓</span>
+            </a>
+            <a
+              class="button button-secondary"
+              id="sourceButton"
+              href="https://github.com/BinaryBearsLLC/USB-Bench"
+              rel="noreferrer"
+            >
+              <span data-i18n="viewSource">Codice sorgente</span>
+              <span class="button-arrow" aria-hidden="true">↗</span>
+            </a>
+          </div>
+
+          <p class="release-meta" id="releaseStatus" aria-live="polite">
+            <span data-i18n="releaseDetecting">Ricerca dell’ultima release GitHub…</span>
+          </p>
+        </div>
+
+        <div
+          class="hero-visual reveal"
+          role="img"
+          data-i18n-aria="appPreview"
+          aria-label="Anteprima dell’app USB Bench"
+        >
+          <div class="visual-glow" aria-hidden="true"></div>
+          <div class="app-window">
+            <div class="window-bar" aria-hidden="true">
+              <span class="window-dot"></span>
+              <span class="window-dot"></span>
+              <span class="window-dot"></span>
+              <span class="window-title">USB Bench</span>
+            </div>
+
+            <div class="window-body">
+              <aside class="mock-sidebar" aria-hidden="true">
+                <div class="mock-brand">
+                  <span class="mock-connector"></span>
+                  USB Bench
+                </div>
+                <div class="mock-nav-item" data-i18n="mockNewTest">Nuovo test</div>
+                <div class="mock-nav-item active" data-i18n="mockResults">Risultati</div>
+                <div class="mock-nav-item" data-i18n="mockComparison">Confronto</div>
+                <div class="mock-nav-item" data-i18n="mockInformation">Informazioni</div>
+                <div class="mock-nav-item" data-i18n="mockSettings">Impostazioni</div>
+              </aside>
+
+              <div class="mock-main" aria-hidden="true">
+                <div class="mock-heading">
+                  <div class="mock-heading-copy">
+                    <strong data-i18n="mockResults">Risultati</strong>
+                    <span data-i18n="mockDatabase">Database locale · 4 test salvati</span>
+                  </div>
+                  <span class="mock-filter" data-i18n="mockFilter">Filtro · Dispositivi</span>
+                </div>
+
+                <div class="preflight-card">
+                  <div class="preflight-top">
+                    <div class="drive-info">
+                      <span class="drive-symbol"></span>
+                      <span class="drive-copy">
+                        <strong>Lexar ARMOR 700</strong>
+                        <span data-i18n="mockExternalSSD">SSD esterno · exFAT</span>
+                      </span>
+                    </div>
+                    <span class="speed-badge">10 Gb/s</span>
+                  </div>
+
+                  <div class="transfer-track"></div>
+
+                  <div class="preflight-grid">
+                    <div>
+                      <span data-i18n="mockConnection">Collegamento</span>
+                      <strong data-i18n="mockDirect">Diretto al Mac</strong>
+                    </div>
+                    <div>
+                      <span data-i18n="mockFreeSpace">Spazio libero</span>
+                      <strong>1.78 TB</strong>
+                    </div>
+                    <div>
+                      <span data-i18n="mockCeiling">Limite</span>
+                      <strong>≈ 1,000 MB/s</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="metric-grid">
+                  <div class="metric-card write">
+                    <span class="metric-label" data-i18n="mockWrite">Scrittura sequenziale</span>
+                    <span class="metric-value">987 <small>MB/s</small></span>
+                    <div class="spark-bars">
+                      <i style="--bar-height: 78%; --bar-delay: 60ms"></i>
+                      <i style="--bar-height: 86%; --bar-delay: 110ms"></i>
+                      <i style="--bar-height: 91%; --bar-delay: 160ms"></i>
+                      <i style="--bar-height: 94%; --bar-delay: 210ms"></i>
+                      <i style="--bar-height: 96%; --bar-delay: 260ms"></i>
+                      <i style="--bar-height: 95%; --bar-delay: 310ms"></i>
+                    </div>
+                  </div>
+
+                  <div class="metric-card read">
+                    <span class="metric-label" data-i18n="mockRead">Lettura sequenziale</span>
+                    <span class="metric-value">991 <small>MB/s</small></span>
+                    <div class="spark-bars">
+                      <i style="--bar-height: 84%; --bar-delay: 90ms"></i>
+                      <i style="--bar-height: 90%; --bar-delay: 140ms"></i>
+                      <i style="--bar-height: 93%; --bar-delay: 190ms"></i>
+                      <i style="--bar-height: 96%; --bar-delay: 240ms"></i>
+                      <i style="--bar-height: 95%; --bar-delay: 290ms"></i>
+                      <i style="--bar-height: 97%; --bar-delay: 340ms"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div
+        class="system-strip reveal"
+        data-i18n-aria="appFacts"
+        aria-label="Caratteristiche dell’applicazione"
+      >
+        <div class="system-item">
+          <strong>arm64</strong>
+          <span data-i18n="factNative">Nativa Apple Silicon</span>
+        </div>
+        <div class="system-item">
+          <strong>SQLite</strong>
+          <span data-i18n="factLocal">Database solo locale</span>
+        </div>
+        <div class="system-item">
+          <strong>IT / EN</strong>
+          <span data-i18n="factBilingual">Interfaccia bilingue</span>
+        </div>
+        <div class="system-item">
+          <strong>0</strong>
+          <span data-i18n="factTelemetry">Telemetria e account</span>
+        </div>
+      </div>
+    </div>
+
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-heading reveal">
+          <p class="section-kicker" data-i18n="featuresKicker">Misura ciò che conta</p>
+          <h2 data-i18n="featuresTitle">Un solo componente cambia. Il risultato diventa utile.</h2>
+          <p data-i18n="featuresLead">
+            USB Bench registra il contesto del test, non soltanto un numero:
+            unità, filesystem, collegamento e velocità negoziata restano insieme al risultato.
+          </p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card large reveal">
+            <span class="feature-number" data-i18n="featureNumberLink">01 · COLLEGAMENTO</span>
+            <h3 data-i18n="featureLinkTitle">Vedi prima il limite del collegamento.</h3>
+            <p data-i18n="featureLinkBody">
+              Il controllo preliminare mostra velocità USB negoziata, percorso diretto
+              o tramite hub, spazio libero e limite pratico stimato.
+            </p>
+            <div class="feature-decoration connection-decoration" aria-hidden="true">
+              <i></i>
+            </div>
+          </article>
+
+          <article class="feature-card medium reveal">
+            <span class="feature-number" data-i18n="featureNumberFilter">02 · FILTRO</span>
+            <h3 data-i18n="featureFilterTitle">Cavi e dispositivi restano separati.</h3>
+            <p data-i18n="featureFilterBody">
+              Filtra risultati e confronti senza perdere il contesto del dispositivo di riferimento.
+            </p>
+            <div class="feature-decoration filter-decoration" aria-hidden="true">
+              <span data-i18n="filterAll">Tutti</span>
+              <span data-i18n="filterCables">Cavi</span>
+              <span data-i18n="filterDrives">Unità</span>
+            </div>
+          </article>
+
+          <article class="feature-card medium reveal">
+            <span class="feature-number" data-i18n="featureNumberCompare">03 · CONFRONTO</span>
+            <h3 data-i18n="featureCompareTitle">Confronti che avvisano quando il setup cambia.</h3>
+            <p data-i18n="featureCompareBody">
+              Profili, dimensione del test, Mac, unità e link negoziato vengono
+              controllati prima di interpretare le differenze.
+            </p>
+            <div class="feature-decoration" aria-hidden="true">A ⇄ B</div>
+          </article>
+
+          <article class="feature-card large reveal">
+            <span class="feature-number" data-i18n="featureNumberDetails">04 · DETTAGLI</span>
+            <h3 data-i18n="featureDetailsTitle">Dettagli completi, interfaccia leggera.</h3>
+            <p data-i18n="featureDetailsBody">
+              Il nome comunicato dall’hardware, come SanDisk 3.2Gen1, viene
+              salvato nel database ma compare soltanto quando apri le informazioni.
+            </p>
+            <div class="feature-decoration" aria-hidden="true">SanDisk 3.2Gen1</div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="method">
+      <div class="container">
+        <div class="method-panel reveal">
+          <div class="method-copy">
+            <p class="section-kicker" data-i18n="methodKicker">Metodo semplice</p>
+            <h2 data-i18n="methodTitle">Cambia il cavo. Non cambiare il test.</h2>
+            <p data-i18n="methodLead">
+              Per misurare un cavo usa lo stesso SSD veloce, la stessa porta e lo
+              stesso profilo. Per misurare un’unità, usa sempre lo stesso cavo.
+            </p>
+          </div>
+
+          <div class="method-steps">
+            <div class="method-step">
+              <div>
+                <strong data-i18n="stepOneTitle">Scegli cosa stai testando</strong>
+                <span data-i18n="stepOneBody">Dispositivo oppure cavo, con un nome riconoscibile.</span>
+              </div>
+            </div>
+            <div class="method-step">
+              <div>
+                <strong data-i18n="stepTwoTitle">Controlla il collegamento</strong>
+                <span data-i18n="stepTwoBody">Velocità negoziata, spazio e presenza di un hub.</span>
+              </div>
+            </div>
+            <div class="method-step">
+              <div>
+                <strong data-i18n="stepThreeTitle">Salva soltanto ciò che serve</strong>
+                <span data-i18n="stepThreeBody">Il risultato entra nel database solo quando lo richiedi.</span>
+              </div>
+            </div>
+            <div class="method-step">
+              <div>
+                <strong data-i18n="stepFourTitle">Confronta setup coerenti</strong>
+                <span data-i18n="stepFourBody">Gli avvisi evidenziano le variabili che non coincidono.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="safety">
+      <div class="container">
+        <div class="safety-panel reveal">
+          <div class="safety-copy">
+            <p class="section-kicker" data-i18n="safetyKicker">Progettata con cautela</p>
+            <h2 data-i18n="safetyTitle">I tuoi file non fanno parte del benchmark.</h2>
+            <p data-i18n="safetyLead">
+              L’app crea un file temporaneo con nome univoco nella posizione
+              scelta e rimuove esclusivamente quel file. Nessun accesso al disco grezzo.
+            </p>
+          </div>
+
+          <ul class="safety-list">
+            <li>
+              <span class="check" aria-hidden="true">✓</span>
+              <span data-i18n="safetyOne">Non formatta e non smonta l’unità</span>
+            </li>
+            <li>
+              <span class="check" aria-hidden="true">✓</span>
+              <span data-i18n="safetyTwo">Non apre, legge o modifica i file esistenti</span>
+            </li>
+            <li>
+              <span class="check" aria-hidden="true">✓</span>
+              <span data-i18n="safetyThree">Interrompe il test se la cache non può essere esclusa</span>
+            </li>
+            <li>
+              <span class="check" aria-hidden="true">✓</span>
+              <span data-i18n="safetyFour">Risultati, Cestino e preferenze restano sul Mac</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section download-section" id="download">
+      <div class="container">
+        <div class="download-panel reveal">
+          <p class="section-kicker">BinaryBears · USB Bench</p>
+          <h2 data-i18n="downloadTitle">Misura il collegamento, non le supposizioni.</h2>
+          <p data-i18n="downloadLead">
+            Open source, nativa Apple Silicon e senza account. Richiede macOS 14 o successivo.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary" id="downloadButtonBottom" href="#">
+              <span id="downloadLabelBottom">Scarica v1.2.0</span>
+              <span class="button-arrow" aria-hidden="true">↓</span>
+            </a>
+            <a
+              class="button button-secondary"
+              id="releasesButton"
+              href="https://github.com/BinaryBearsLLC/USB-Bench/releases"
+              rel="noreferrer"
+            >
+              <span data-i18n="allReleases">Tutte le release</span>
+              <span class="button-arrow" aria-hidden="true">↗</span>
+            </a>
+          </div>
+
+          <p class="download-details" id="downloadDetails" aria-live="polite">
+            Apple Silicon · arm64 · DMG
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        © <span id="year">2026</span> BinaryBears LLC
+        <span data-i18n="freeLicense">· Licenza MIT.</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://binarybears.com" rel="noreferrer">binarybears.com</a>
+        <a
+          id="footerRepository"
+          href="https://github.com/BinaryBearsLLC/USB-Bench"
+          rel="noreferrer"
+        >GitHub</a>
+        <a href="#top" data-i18n="backTop">Torna su ↑</a>
+      </div>
+    </div>
+  </footer>
+
+  <noscript>
+    <p style="padding: 16px; text-align: center">
+      <span lang="it">
+        JavaScript serve solo per lingua, aspetto e ultima release pubblica GitHub.
+      </span>
+      <br>
+      <span lang="en">
+        JavaScript is only used for language, appearance, and the latest public GitHub release.
+      </span>
+    </p>
+  </noscript>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const FALLBACK_VERSION = "v1.2.0";
+      const THEMES = ["auto", "light", "dark"];
+      const translations = {
+        it: {
+          skip: "Vai al contenuto",
+          navFeatures: "Funzioni",
+          navMethod: "Metodo",
+          navSafety: "Sicurezza",
+          navDownload: "Download",
+          primaryNav: "Navigazione principale",
+          themeAria: "Cambia aspetto",
+          languageAria: "Seleziona lingua",
+          appPreview: "Anteprima dell’app USB Bench",
+          appFacts: "Caratteristiche dell’applicazione",
+          free: "Open source",
+          heroTitle: "Scopri quanto va la tua",
+          heroLead:
+            "Misura unità di archiviazione, confronta cavi e scopri il limite reale del collegamento. Tutto sul tuo Mac, senza toccare i file esistenti.",
+          downloadMac: "Scarica per Mac",
+          viewSource: "Codice sorgente",
+          releaseDetecting: "Ricerca dell’ultima release GitHub…",
+          releaseLatest: "Ultima release GitHub",
+          releaseCached: "Ultima release disponibile",
+          releaseFallback: "La release verrà rilevata automaticamente su GitHub Pages",
+          mockNewTest: "Nuovo test",
+          mockResults: "Risultati",
+          mockComparison: "Confronto",
+          mockInformation: "Informazioni",
+          mockSettings: "Impostazioni",
+          mockDatabase: "Database locale · 4 test salvati",
+          mockFilter: "Filtro · Dispositivi",
+          mockExternalSSD: "SSD esterno · exFAT",
+          mockConnection: "Collegamento",
+          mockDirect: "Diretto al Mac",
+          mockFreeSpace: "Spazio libero",
+          mockCeiling: "Limite",
+          mockWrite: "Scrittura sequenziale",
+          mockRead: "Lettura sequenziale",
+          factNative: "Nativa Apple Silicon",
+          factLocal: "Database solo locale",
+          factBilingual: "Interfaccia bilingue",
+          factTelemetry: "Telemetria e account",
+          featuresKicker: "Misura ciò che conta",
+          featuresTitle: "Un solo componente cambia. Il risultato diventa utile.",
+          featuresLead:
+            "USB Bench registra il contesto del test, non soltanto un numero: unità, filesystem, collegamento e velocità negoziata restano insieme al risultato.",
+          featureNumberLink: "01 · COLLEGAMENTO",
+          featureNumberFilter: "02 · FILTRO",
+          featureNumberCompare: "03 · CONFRONTO",
+          featureNumberDetails: "04 · DETTAGLI",
+          filterAll: "Tutti",
+          filterCables: "Cavi",
+          filterDrives: "Unità",
+          featureLinkTitle: "Vedi prima il limite del collegamento.",
+          featureLinkBody:
+            "Il controllo preliminare mostra velocità USB negoziata, percorso diretto o tramite hub, spazio libero e limite pratico stimato.",
+          featureFilterTitle: "Cavi e dispositivi restano separati.",
+          featureFilterBody:
+            "Filtra risultati e confronti senza perdere il contesto del dispositivo di riferimento.",
+          featureCompareTitle: "Confronti che avvisano quando il setup cambia.",
+          featureCompareBody:
+            "Profili, dimensione del test, Mac, unità e link negoziato vengono controllati prima di interpretare le differenze.",
+          featureDetailsTitle: "Dettagli completi, interfaccia leggera.",
+          featureDetailsBody:
+            "Il nome comunicato dall’hardware, come SanDisk 3.2Gen1, viene salvato nel database ma compare soltanto quando apri le informazioni.",
+          methodKicker: "Metodo semplice",
+          methodTitle: "Cambia il cavo. Non cambiare il test.",
+          methodLead:
+            "Per misurare un cavo usa lo stesso SSD veloce, la stessa porta e lo stesso profilo. Per misurare un’unità, usa sempre lo stesso cavo.",
+          stepOneTitle: "Scegli cosa stai testando",
+          stepOneBody: "Dispositivo oppure cavo, con un nome riconoscibile.",
+          stepTwoTitle: "Controlla il collegamento",
+          stepTwoBody: "Velocità negoziata, spazio e presenza di un hub.",
+          stepThreeTitle: "Salva soltanto ciò che serve",
+          stepThreeBody: "Il risultato entra nel database solo quando lo richiedi.",
+          stepFourTitle: "Confronta setup coerenti",
+          stepFourBody: "Gli avvisi evidenziano le variabili che non coincidono.",
+          safetyKicker: "Progettata con cautela",
+          safetyTitle: "I tuoi file non fanno parte del benchmark.",
+          safetyLead:
+            "L’app crea un file temporaneo con nome univoco nella posizione scelta e rimuove esclusivamente quel file. Nessun accesso al disco grezzo.",
+          safetyOne: "Non formatta e non smonta l’unità",
+          safetyTwo: "Non apre, legge o modifica i file esistenti",
+          safetyThree: "Interrompe il test se la cache non può essere esclusa",
+          safetyFour: "Risultati, Cestino e preferenze restano sul Mac",
+          downloadTitle: "Misura il collegamento, non le supposizioni.",
+          downloadLead:
+            "Open source, nativa Apple Silicon e senza account. Richiede macOS 14 o successivo.",
+          downloadVersion: "Scarica {version}",
+          allReleases: "Tutte le release",
+          published: "pubblicata il {date}",
+          assetSize: "{size} · Apple Silicon · arm64 · DMG",
+          backTop: "Torna su ↑",
+          freeLicense: "· Licenza MIT.",
+          themeAuto: "Auto",
+          themeLight: "Chiaro",
+          themeDark: "Scuro"
+        },
+        en: {
+          skip: "Skip to content",
+          navFeatures: "Features",
+          navMethod: "Method",
+          navSafety: "Safety",
+          navDownload: "Download",
+          primaryNav: "Primary navigation",
+          themeAria: "Change appearance",
+          languageAria: "Select language",
+          appPreview: "USB Bench app preview",
+          appFacts: "Application facts",
+          free: "Open source",
+          heroTitle: "Know your",
+          heroLead:
+            "Measure storage devices, compare cables, and find the real connection limit. Everything stays on your Mac, without touching existing files.",
+          downloadMac: "Download for Mac",
+          viewSource: "View source",
+          releaseDetecting: "Checking the latest GitHub Release…",
+          releaseLatest: "Latest GitHub Release",
+          releaseCached: "Latest available release",
+          releaseFallback: "The release will be detected automatically on GitHub Pages",
+          mockNewTest: "New test",
+          mockResults: "Results",
+          mockComparison: "Comparison",
+          mockInformation: "Information",
+          mockSettings: "Settings",
+          mockDatabase: "Local database · 4 saved tests",
+          mockFilter: "Filter · Devices",
+          mockExternalSSD: "External SSD · exFAT",
+          mockConnection: "Connection",
+          mockDirect: "Direct to Mac",
+          mockFreeSpace: "Free space",
+          mockCeiling: "Ceiling",
+          mockWrite: "Sequential write",
+          mockRead: "Sequential read",
+          factNative: "Native Apple Silicon",
+          factLocal: "Local-only database",
+          factBilingual: "Bilingual interface",
+          factTelemetry: "Telemetry and accounts",
+          featuresKicker: "Measure what matters",
+          featuresTitle: "Change one component. Make the result useful.",
+          featuresLead:
+            "USB Bench records the test context, not just a number: drive, file system, connection, and negotiated speed stay with the result.",
+          featureNumberLink: "01 · LINK",
+          featureNumberFilter: "02 · FILTER",
+          featureNumberCompare: "03 · COMPARE",
+          featureNumberDetails: "04 · DETAILS",
+          filterAll: "All",
+          filterCables: "Cables",
+          filterDrives: "Drives",
+          featureLinkTitle: "See the connection limit first.",
+          featureLinkBody:
+            "The preflight shows negotiated USB speed, direct or hub path, free space, and an estimated practical ceiling.",
+          featureFilterTitle: "Keep cables and devices separate.",
+          featureFilterBody:
+            "Filter results and comparisons without losing the reference-device context.",
+          featureCompareTitle: "Comparisons that flag setup changes.",
+          featureCompareBody:
+            "Profiles, test size, Mac, drive, and negotiated link are checked before interpreting differences.",
+          featureDetailsTitle: "Complete details, lightweight interface.",
+          featureDetailsBody:
+            "The hardware-reported name, such as SanDisk 3.2Gen1, is saved in the database but appears only when you open result information.",
+          methodKicker: "Simple method",
+          methodTitle: "Change the cable. Keep the test.",
+          methodLead:
+            "To measure a cable, use the same fast SSD, port, and profile. To measure a drive, always use the same cable.",
+          stepOneTitle: "Choose what you are testing",
+          stepOneBody: "Device or cable, with a recognizable name.",
+          stepTwoTitle: "Check the connection",
+          stepTwoBody: "Negotiated speed, free space, and hub detection.",
+          stepThreeTitle: "Save only what matters",
+          stepThreeBody: "A result enters the database only when you request it.",
+          stepFourTitle: "Compare consistent setups",
+          stepFourBody: "Warnings highlight variables that do not match.",
+          safetyKicker: "Designed with care",
+          safetyTitle: "Your files are not part of the benchmark.",
+          safetyLead:
+            "The app creates one uniquely named temporary file in the selected location and removes only that file. No raw-disk access.",
+          safetyOne: "Does not format or unmount the drive",
+          safetyTwo: "Does not open, read, or modify existing files",
+          safetyThree: "Stops if the system cache cannot be bypassed",
+          safetyFour: "Results, Trash, and preferences stay on the Mac",
+          downloadTitle: "Measure the connection, not assumptions.",
+          downloadLead:
+            "Open source, native Apple Silicon, and account-free. Requires macOS 14 or later.",
+          downloadVersion: "Download {version}",
+          allReleases: "All releases",
+          published: "published {date}",
+          assetSize: "{size} · Apple Silicon · arm64 · DMG",
+          backTop: "Back to top ↑",
+          freeLicense: "· MIT License.",
+          themeAuto: "Auto",
+          themeLight: "Light",
+          themeDark: "Dark"
+        }
+      };
+
+      const state = {
+        language: document.documentElement.lang === "en" ? "en" : "it",
+        theme: THEMES.includes(document.documentElement.dataset.theme)
+          ? document.documentElement.dataset.theme
+          : "auto",
+        release: null,
+        releaseSource: "fallback"
+      };
+
+      const elements = {
+        themeButton: document.getElementById("themeButton"),
+        themeName: document.getElementById("themeName"),
+        themeSymbol: document.getElementById("themeSymbol"),
+        languageButtons: [...document.querySelectorAll("[data-language]")],
+        latestVersion: document.getElementById("latestVersion"),
+        releaseStatus: document.getElementById("releaseStatus"),
+        downloadButton: document.getElementById("downloadButton"),
+        downloadButtonBottom: document.getElementById("downloadButtonBottom"),
+        downloadLabelBottom: document.getElementById("downloadLabelBottom"),
+        downloadDetails: document.getElementById("downloadDetails"),
+        sourceButton: document.getElementById("sourceButton"),
+        releasesButton: document.getElementById("releasesButton"),
+        footerRepository: document.getElementById("footerRepository")
+      };
+
+      const t = (key) => translations[state.language][key] || key;
+      const replace = (template, values) =>
+        template.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
+
+      function setLanguage(language, persist = true) {
+        state.language = language === "en" ? "en" : "it";
+        document.documentElement.lang = state.language;
+
+        document.querySelectorAll("[data-i18n]").forEach((node) => {
+          node.textContent = t(node.dataset.i18n);
+        });
+        document.querySelectorAll("[data-i18n-aria]").forEach((node) => {
+          node.setAttribute("aria-label", t(node.dataset.i18nAria));
+        });
+        elements.languageButtons.forEach((button) => {
+          button.setAttribute(
+            "aria-pressed",
+            String(button.dataset.language === state.language)
+          );
+        });
+
+        if (persist) {
+          try {
+            localStorage.setItem("usbBenchLanguage", state.language);
+          } catch (_) {}
+        }
+        renderTheme();
+        renderRelease();
+      }
+
+      function setTheme(theme, persist = true) {
+        state.theme = THEMES.includes(theme) ? theme : "auto";
+        document.documentElement.dataset.theme = state.theme;
+        if (persist) {
+          try {
+            localStorage.setItem("usbBenchTheme", state.theme);
+          } catch (_) {}
+        }
+        renderTheme();
+      }
+
+      function renderTheme() {
+        const names = {
+          auto: t("themeAuto"),
+          light: t("themeLight"),
+          dark: t("themeDark")
+        };
+        const symbols = {
+          auto: "◐",
+          light: "☀",
+          dark: "●"
+        };
+        elements.themeName.textContent = names[state.theme];
+        elements.themeSymbol.textContent = symbols[state.theme];
+        elements.themeButton.title = `${t("themeAria")}: ${names[state.theme]}`;
+        const followsDarkAppearance =
+          state.theme === "dark"
+          || (
+            state.theme === "auto"
+            && window.matchMedia("(prefers-color-scheme: dark)").matches
+          );
+        document.getElementById("themeColor").content =
+          followsDarkAppearance ? "#101114" : "#f5f5f7";
+      }
+
+      function detectRepository() {
+        const queryRepository = new URLSearchParams(location.search).get("repo");
+        if (/^[\w.-]+\/[\w.-]+$/.test(queryRepository || "")) {
+          return queryRepository;
+        }
+
+        const configuredRepository =
+          document.querySelector('meta[name="github-repository"]')?.content.trim();
+        if (/^[\w.-]+\/[\w.-]+$/.test(configuredRepository || "")) {
+          return configuredRepository;
+        }
+
+        if (location.hostname.endsWith(".github.io")) {
+          const owner = location.hostname.split(".")[0];
+          const firstPath = location.pathname.split("/").filter(Boolean)[0];
+          const repository = firstPath || `${owner}.github.io`;
+          return `${owner}/${repository}`;
+        }
+        return "";
+      }
+
+      function formatBytes(bytes) {
+        if (!Number.isFinite(bytes) || bytes <= 0) return "";
+        const units = ["B", "KB", "MB", "GB"];
+        const index = Math.min(
+          Math.floor(Math.log(bytes) / Math.log(1024)),
+          units.length - 1
+        );
+        const value = bytes / 1024 ** index;
+        return `${value.toLocaleString(state.language, {
+          maximumFractionDigits: value >= 10 ? 0 : 1
+        })} ${units[index]}`;
+      }
+
+      function formatDate(dateValue) {
+        const date = new Date(dateValue);
+        if (Number.isNaN(date.getTime())) return "";
+        return new Intl.DateTimeFormat(state.language, {
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        }).format(date);
+      }
+
+      function safeGitHubURL(value) {
+        try {
+          const url = new URL(value);
+          const isGitHubHost =
+            url.hostname === "github.com"
+            || url.hostname.endsWith(".githubusercontent.com");
+          return url.protocol === "https:" && isGitHubHost ? url.href : "";
+        } catch (_) {
+          return "";
+        }
+      }
+
+      function releaseInfoFrom(data) {
+        const assets = Array.isArray(data?.assets) ? data.assets : [];
+        const dmg =
+          assets.find((asset) =>
+            /apple[- ]?silicon.*\.dmg$/i.test(asset.name || "")
+          )
+          || assets.find((asset) => /\.dmg$/i.test(asset.name || ""));
+        return {
+          version: data?.tag_name || FALLBACK_VERSION,
+          date: data?.published_at || "",
+          releaseURL: safeGitHubURL(data?.html_url || ""),
+          downloadURL: safeGitHubURL(
+            dmg?.browser_download_url || data?.html_url || ""
+          ),
+          size: Number(dmg?.size || 0)
+        };
+      }
+
+      function renderRelease() {
+        const release = state.release || {
+          version: FALLBACK_VERSION,
+          date: "",
+          releaseURL: "",
+          downloadURL: "",
+          size: 0
+        };
+        const version = release.version || FALLBACK_VERSION;
+        const size = formatBytes(release.size);
+        const date = formatDate(release.date);
+
+        elements.latestVersion.textContent = version;
+        elements.downloadLabelBottom.textContent = replace(t("downloadVersion"), {
+          version
+        });
+
+        if (release.downloadURL) {
+          elements.downloadButton.href = release.downloadURL;
+          elements.downloadButtonBottom.href = release.downloadURL;
+          elements.downloadButton.removeAttribute("aria-disabled");
+          elements.downloadButtonBottom.removeAttribute("aria-disabled");
+        } else {
+          elements.downloadButton.href = "#download";
+          elements.downloadButtonBottom.href = release.releaseURL || "#";
+        }
+
+        const sourceLabel =
+          state.releaseSource === "live"
+            ? t("releaseLatest")
+            : state.releaseSource === "cache"
+              ? t("releaseCached")
+              : t("releaseFallback");
+        const dateLabel = date
+          ? ` · ${replace(t("published"), { date })}`
+          : "";
+        elements.releaseStatus.textContent = `${sourceLabel}${dateLabel}`;
+        elements.downloadDetails.textContent = size
+          ? replace(t("assetSize"), { size })
+          : "Apple Silicon · arm64 · DMG";
+      }
+
+      async function loadLatestRelease(repository) {
+        if (!repository) {
+          state.releaseSource = "fallback";
+          renderRelease();
+          return;
+        }
+
+        const repositoryURL = `https://github.com/${repository}`;
+        elements.sourceButton.href = repositoryURL;
+        elements.footerRepository.href = repositoryURL;
+        elements.releasesButton.href = `${repositoryURL}/releases`;
+
+        const cacheKey = `usbBenchRelease:${repository}`;
+        try {
+          const response = await fetch(
+            `https://api.github.com/repos/${repository}/releases?per_page=1`,
+            {
+              headers: {
+                Accept: "application/vnd.github+json"
+              }
+            }
+          );
+          if (!response.ok) throw new Error(`GitHub API ${response.status}`);
+          const releases = await response.json();
+          const data = Array.isArray(releases) ? releases[0] : null;
+          if (!data) {
+            state.releaseSource = "fallback";
+            renderRelease();
+            return;
+          }
+          state.release = releaseInfoFrom(data);
+          state.releaseSource = "live";
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(data));
+          } catch (_) {}
+        } catch (_) {
+          try {
+            const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+            if (cached) {
+              state.release = releaseInfoFrom(cached);
+              state.releaseSource = "cache";
+            } else {
+              state.releaseSource = "fallback";
+            }
+          } catch (_) {
+            state.releaseSource = "fallback";
+          }
+        }
+        renderRelease();
+      }
+
+      elements.languageButtons.forEach((button) => {
+        button.addEventListener("click", () => setLanguage(button.dataset.language));
+      });
+
+      elements.themeButton.addEventListener("click", () => {
+        const index = THEMES.indexOf(state.theme);
+        setTheme(THEMES[(index + 1) % THEMES.length]);
+      });
+
+      window
+        .matchMedia("(prefers-color-scheme: dark)")
+        .addEventListener("change", renderTheme);
+
+      const revealObserver =
+        "IntersectionObserver" in window
+          ? new IntersectionObserver(
+              (entries) => {
+                entries.forEach((entry) => {
+                  if (entry.isIntersecting) {
+                    entry.target.classList.add("is-visible");
+                    revealObserver.unobserve(entry.target);
+                  }
+                });
+              },
+              { threshold: 0.13 }
+            )
+          : null;
+
+      document.querySelectorAll(".reveal").forEach((element) => {
+        if (revealObserver) {
+          revealObserver.observe(element);
+        } else {
+          element.classList.add("is-visible");
+        }
+      });
+
+      document.getElementById("year").textContent = String(new Date().getFullYear());
+      setTheme(state.theme, false);
+      setLanguage(state.language, false);
+      loadLatestRelease(detectRepository());
+    })();
+  </script>
+</body>
+</html>
