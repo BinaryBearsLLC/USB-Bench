@@ -8,6 +8,7 @@ VERSION="$(/usr/bin/plutil -extract CFBundleShortVersionString raw -o - "$INFO_P
 OUTPUT_DIR="${OUTPUT_DIR:-$PROJECT_ROOT/dist}"
 DMG_PATH="$OUTPUT_DIR/USB-Bench-$VERSION-Apple-Silicon.dmg"
 NOTARY_PROFILE="${NOTARY_PROFILE:-BinaryBears-Notary}"
+NOTARY_KEYCHAIN="${NOTARY_KEYCHAIN:-${SIGNING_KEYCHAIN:-}}"
 
 if [[ -z "${SIGNING_IDENTITY:-}" || "$SIGNING_IDENTITY" == "-" ]]; then
   print -u2 "Set SIGNING_IDENTITY to the Developer ID Application certificate."
@@ -18,10 +19,11 @@ OUTPUT_DIR="$OUTPUT_DIR" \
 SIGNING_IDENTITY="$SIGNING_IDENTITY" \
   "$PROJECT_ROOT/scripts/package_app.sh"
 
-xcrun notarytool submit \
-  "$DMG_PATH" \
-  --keychain-profile "$NOTARY_PROFILE" \
-  --wait
+notary_arguments=(--keychain-profile "$NOTARY_PROFILE")
+if [[ -n "$NOTARY_KEYCHAIN" ]]; then
+  notary_arguments+=(--keychain "$NOTARY_KEYCHAIN")
+fi
+xcrun notarytool submit "$DMG_PATH" "${notary_arguments[@]}" --wait
 
 xcrun stapler staple "$DMG_PATH"
 xcrun stapler validate "$DMG_PATH"
@@ -32,7 +34,10 @@ spctl \
   --verbose=2 \
   "$DMG_PATH"
 
-/usr/bin/shasum -a 256 "$DMG_PATH" > "$DMG_PATH.sha256"
+(
+  cd "$OUTPUT_DIR"
+  /usr/bin/shasum -a 256 "${DMG_PATH:t}" > "${DMG_PATH:t}.sha256"
+)
 
 echo "$DMG_PATH"
 echo "$DMG_PATH.sha256"

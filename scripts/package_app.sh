@@ -13,6 +13,7 @@ EXECUTABLE_NAME="USBBench"
 INFO_PLIST="$PROJECT_ROOT/Packaging/Info.plist"
 VERSION="$(/usr/bin/plutil -extract CFBundleShortVersionString raw -o - "$INFO_PLIST")"
 SIGNING_IDENTITY="${SIGNING_IDENTITY:--}"
+SIGNING_KEYCHAIN="${SIGNING_KEYCHAIN:-}"
 APP_PATH="$BUILD_ROOT/$APP_NAME.app"
 DMG_PATH="$OUTPUT_DIR/USB-Bench-$VERSION-Apple-Silicon.dmg"
 ICON_MASTER="$PROJECT_ROOT/Assets/USB-Bench-Icon.png"
@@ -76,12 +77,11 @@ plutil -lint "$APP_PATH/Contents/Info.plist"
 if [[ "$SIGNING_IDENTITY" == "-" ]]; then
   codesign --force --sign - --timestamp=none "$APP_PATH"
 else
-  codesign \
-    --force \
-    --sign "$SIGNING_IDENTITY" \
-    --options runtime \
-    --timestamp \
-    "$APP_PATH"
+  signing_arguments=(--force --sign "$SIGNING_IDENTITY" --options runtime --timestamp)
+  if [[ -n "$SIGNING_KEYCHAIN" ]]; then
+    signing_arguments+=(--keychain "$SIGNING_KEYCHAIN")
+  fi
+  codesign "${signing_arguments[@]}" "$APP_PATH"
 fi
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
@@ -100,7 +100,11 @@ hdiutil create \
   -ov \
   "$DMG_PATH"
 if [[ "$SIGNING_IDENTITY" != "-" ]]; then
-  codesign --force --sign "$SIGNING_IDENTITY" --timestamp "$DMG_PATH"
+  signing_arguments=(--force --sign "$SIGNING_IDENTITY" --timestamp)
+  if [[ -n "$SIGNING_KEYCHAIN" ]]; then
+    signing_arguments+=(--keychain "$SIGNING_KEYCHAIN")
+  fi
+  codesign "${signing_arguments[@]}" "$DMG_PATH"
   codesign --verify --verbose=2 "$DMG_PATH"
 fi
 hdiutil verify "$DMG_PATH"

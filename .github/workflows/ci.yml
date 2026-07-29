@@ -25,6 +25,8 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Download and run actionlint
         env:
@@ -44,10 +46,14 @@ jobs:
     name: Validate, test, and package
     runs-on: macos-15
     timeout-minutes: 25
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
 
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Report the toolchain
         run: |
@@ -63,6 +69,7 @@ jobs:
         run: |
           plutil -lint Packaging/Info.plist
           zsh -n \
+            scripts/check_all.sh \
             scripts/notarize_release.sh \
             scripts/package_app.sh \
             scripts/sync_brand_assets.sh \

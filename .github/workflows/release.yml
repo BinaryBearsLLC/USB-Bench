@@ -1,15 +1,18 @@
 name: Release notarized DMG
 
 on:
-  push:
-    tags:
-      - v*
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic version to release, for example 1.2.1
+        required: true
+        type: string
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-v${{ inputs.version }}
   cancel-in-progress: false
 
 jobs:
@@ -17,14 +20,60 @@ jobs:
     name: Sign, notarize, and publish
     runs-on: macos-15
     timeout-minutes: 35
+    permissions:
+      contents: write
     env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
       NOTARY_PROFILE: usb-bench-notary-${{ github.run_id }}
+      RELEASE_VERSION: ${{ inputs.version }}
 
     steps:
-      - name: Check out the tagged source
+      - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Validate release configuration
+      - name: Validate and check out the signed release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Run this workflow from the main branch."
+            exit 1
+          fi
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version must use the X.Y.Z format."
+            exit 1
+          fi
+
+          release_tag="v${RELEASE_VERSION}"
+          if ! git show-ref --verify --quiet "refs/tags/${release_tag}"; then
+            echo "::error::Signed tag ${release_tag} does not exist."
+            exit 1
+          fi
+
+          git config --local gpg.format ssh
+          git config --local gpg.ssh.allowedSignersFile \
+            "$GITHUB_WORKSPACE/.github/allowed_signers"
+          git verify-tag "$release_tag"
+
+          tag_commit="$(git rev-list -n 1 "$release_tag")"
+          if ! git merge-base --is-ancestor "$tag_commit" origin/main; then
+            echo "::error::Tag ${release_tag} is not reachable from origin/main."
+            exit 1
+          fi
+
+          git checkout --detach "$release_tag"
+          version="$(plutil -extract CFBundleShortVersionString raw -o - Packaging/Info.plist)"
+          if [[ "$RELEASE_VERSION" != "$version" ]]; then
+            echo "::error::Requested version ${RELEASE_VERSION} does not match ${version}."
+            exit 1
+          fi
+
+          printf 'RELEASE_TAG=%s\n' "$release_tag" >> "$GITHUB_ENV"
+
+      - name: Validate Apple release secrets
         shell: bash
         env:
           APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
@@ -50,17 +99,6 @@ jobs:
             fi
           done
 
-      - name: Verify the tag matches the application version
-        shell: bash
-        run: |
-          set -euo pipefail
-          version="$(plutil -extract CFBundleShortVersionString raw -o - Packaging/Info.plist)"
-          expected_tag="v${version}"
-          if [[ "$GITHUB_REF_NAME" != "$expected_tag" ]]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match $expected_tag."
-            exit 1
-          fi
-
       - name: Check Swift formatting
         run: |
           swift format lint --recursive --parallel --strict \
@@ -80,6 +118,7 @@ jobs:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
           set -euo pipefail
+          umask 077
           certificate_path="$RUNNER_TEMP/developer-id.p12"
           keychain_path="$RUNNER_TEMP/usb-bench-signing.keychain-db"
           keychain_password="$(uuidgen)"
@@ -87,7 +126,6 @@ jobs:
           printf '%s' "$APPLE_CERTIFICATE_P12_BASE64" |
             /usr/bin/base64 --decode > "$certificate_path"
           security create-keychain -p "$keychain_password" "$keychain_path"
-          security default-keychain -d user -s "$keychain_path"
           security set-keychain-settings -lut 21600 "$keychain_path"
           security unlock-keychain -p "$keychain_password" "$keychain_path"
           security import "$certificate_path" \
@@ -102,6 +140,7 @@ jobs:
           security find-identity -v -p codesigning "$keychain_path" |
             grep -F -- "$APPLE_SIGNING_IDENTITY"
           rm -f "$certificate_path"
+          printf 'SIGNING_KEYCHAIN=%s\n' "$keychain_path" >> "$GITHUB_ENV"
 
       - name: Store temporary notarization credentials
         shell: bash
@@ -111,13 +150,15 @@ jobs:
           APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
           set -euo pipefail
+          umask 077
           api_key_path="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
           printf '%s' "$APPLE_API_KEY_BASE64" |
             /usr/bin/base64 --decode > "$api_key_path"
           xcrun notarytool store-credentials "$NOTARY_PROFILE" \
             --key "$api_key_path" \
             --key-id "$APPLE_API_KEY_ID" \
-            --issuer "$APPLE_API_ISSUER_ID"
+            --issuer "$APPLE_API_ISSUER_ID" \
+            --keychain "$SIGNING_KEYCHAIN"
           rm -f "$api_key_path"
 
       - name: Build, sign, notarize, and verify
@@ -133,7 +174,7 @@ jobs:
           set -euo pipefail
           version="$(plutil -extract CFBundleShortVersionString raw -o - Packaging/Info.plist)"
           dmg_path="dist/USB-Bench-${version}-Apple-Silicon.dmg"
-          gh release create "$GITHUB_REF_NAME" \
+          gh release create "$RELEASE_TAG" \
             "$dmg_path" \
             "${dmg_path}.sha256" \
             --verify-tag \
@@ -147,7 +188,7 @@ jobs:
           rm -f \
             "$RUNNER_TEMP/developer-id.p12" \
             "$RUNNER_TEMP"/AuthKey_*.p8
-          keychain_path="$RUNNER_TEMP/usb-bench-signing.keychain-db"
+          keychain_path="${SIGNING_KEYCHAIN:-$RUNNER_TEMP/usb-bench-signing.keychain-db}"
           if [[ -f "$keychain_path" ]]; then
             security delete-keychain "$keychain_path" || true
           fi
