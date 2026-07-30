@@ -7,7 +7,7 @@ INFO_PLIST="$PROJECT_ROOT/Packaging/Info.plist"
 VERSION="$(/usr/bin/plutil -extract CFBundleShortVersionString raw -o - "$INFO_PLIST")"
 OUTPUT_DIR="${OUTPUT_DIR:-$PROJECT_ROOT/dist}"
 DMG_PATH="$OUTPUT_DIR/USB-Bench-$VERSION-Apple-Silicon.dmg"
-NOTARY_PROFILE="${NOTARY_PROFILE:-BinaryBears-Notary}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-USB-Bench-Notary}"
 NOTARY_KEYCHAIN="${NOTARY_KEYCHAIN:-${SIGNING_KEYCHAIN:-}}"
 
 if [[ -z "${SIGNING_IDENTITY:-}" || "$SIGNING_IDENTITY" == "-" ]]; then

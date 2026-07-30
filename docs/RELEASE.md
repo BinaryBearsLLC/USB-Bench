@@ -32,7 +32,7 @@ ID certificate that signs the application.
 SSH signing is the recommended setup for this repository because it is
 supported by the Git and OpenSSH versions included with current macOS releases.
 Create a dedicated key outside the repository and protect it with a strong
-passphrase:
+passphrase. The filename below is project-scoped and is not a credential:
 
 ```sh
 mkdir -p -m 700 ~/.ssh
@@ -40,12 +40,12 @@ ssh-keygen \
   -t ed25519 \
   -a 100 \
   -C "YOUR_VERIFIED_GITHUB_EMAIL" \
-  -f ~/.ssh/id_ed25519_binarybears_signing
-ssh-add --apple-use-keychain ~/.ssh/id_ed25519_binarybears_signing
+  -f ~/.ssh/id_ed25519_usb_bench_signing
+ssh-add --apple-use-keychain ~/.ssh/id_ed25519_usb_bench_signing
 ```
 
 Add the contents of
-`~/.ssh/id_ed25519_binarybears_signing.pub` to the maintainer's GitHub account
+`~/.ssh/id_ed25519_usb_bench_signing.pub` to the maintainer's GitHub account
 as an **SSH signing key**, not as a deploy key. The commit email must be
 verified on the same GitHub account.
 
@@ -54,12 +54,12 @@ Configure signing locally for this repository:
 ```sh
 git config --local gpg.format ssh
 git config --local user.email "YOUR_VERIFIED_GITHUB_EMAIL"
-git config --local user.signingkey ~/.ssh/id_ed25519_binarybears_signing.pub
+git config --local user.signingkey ~/.ssh/id_ed25519_usb_bench_signing.pub
 git config --local commit.gpgsign true
 git config --local tag.gpgsign true
 printf '%s %s\n' \
   "YOUR_VERIFIED_GITHUB_EMAIL" \
-  "$(cat ~/.ssh/id_ed25519_binarybears_signing.pub)" \
+  "$(cat ~/.ssh/id_ed25519_usb_bench_signing.pub)" \
   > .git/allowed_signers
 git config --local gpg.ssh.allowedSignersFile .git/allowed_signers
 ```
@@ -108,7 +108,7 @@ For a local manual release, store notarization credentials in the login
 Keychain:
 
 ```sh
-xcrun notarytool store-credentials "BinaryBears-Notary" \
+xcrun notarytool store-credentials "USB-Bench-Notary" \
   --apple-id "APPLE-ID" \
   --team-id "TEAM-ID" \
   --password "APP-SPECIFIC-PASSWORD"
