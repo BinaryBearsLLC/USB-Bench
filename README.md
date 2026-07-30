@@ -34,9 +34,8 @@
 
   <img
     src="docs/assets/usb-bench-hero.jpg"
-    width="1200"
-    alt="Generic USB storage devices and cables arranged for a performance benchmark"
-  >
+    width="1000"
+    alt="Generic USB storage devices and cables arranged for a performance benchmark">
 </div>
 
 ## Measure the complete USB chain
