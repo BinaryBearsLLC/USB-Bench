@@ -6,6 +6,21 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## 1.2.0
+
+### Added
+
+- Automatic, light, and dark appearance modes using native macOS colors.
+- Results and comparison filters for cables and devices.
+- Device-reported hardware names in persisted results and result details.
+- BinaryBears LLC branding and attribution.
+- Local and GitHub Actions pipelines for Developer ID signing, notarization,
+  stapling, checksum generation, and DMG publication.
+- Responsive bilingual GitHub Pages landing page with automatic theme support.
+- Live discovery of the latest public GitHub Release and Apple Silicon DMG.
+- Extended CSV export with hardware name, filesystem, and macOS device
+  identifier.
+
 ### Changed
 
 - Established the public MIT-licensed repository baseline.
@@ -21,21 +36,9 @@ The project follows [Semantic Versioning](https://semver.org/).
 - Made Swift formatting checks compatible with both local and GitHub runner
   toolchains.
 - Isolated Apple release credentials in a temporary Keychain during automation.
-
-## 1.2.0
-
-### Added
-
-- Automatic, light, and dark appearance modes using native macOS colors.
-- Results and comparison filters for cables and devices.
-- Device-reported hardware names in persisted results and result details.
-- BinaryBears LLC branding and attribution.
-- Local and GitHub Actions pipelines for Developer ID signing, notarization,
-  stapling, checksum generation, and DMG publication.
-- Responsive bilingual GitHub Pages landing page with automatic theme support.
-- Live discovery of the latest public GitHub Release and Apple Silicon DMG.
-- Extended CSV export with hardware name, filesystem, and macOS device
-  identifier.
+- Added an explicit distribution policy for maintainers, contributors, and
+  automation agents.
+- Hardened ignore rules against committing credentials and release binaries.
 
 ## 1.1.1
 

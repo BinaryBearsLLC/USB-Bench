@@ -115,8 +115,9 @@ from a signed tag, then Developer ID signed, notarized by Apple, stapled, and
 verified before publication.
 
 See the [development guide](docs/DEVELOPMENT.md) for the toolchain and project
-structure, and the [release guide](docs/RELEASE.md) for the full signing and
-notarization procedure.
+structure, the [distribution policy](docs/DISTRIBUTION.md) for the boundary
+between source updates and public releases, and the
+[release guide](docs/RELEASE.md) for signing and notarization.
 
 ## Architecture
 

@@ -20,9 +20,8 @@ The core does not depend on the interface:
 - Xcode with Swift 6 or later
 
 The current public baseline was verified with Xcode 26.6 and Apple Swift 6.3.3.
-CI also validates it with the default Xcode 16.4 toolchain on GitHub's
-`macos-15` runner. The package declares Swift tools version 6.0 and Swift
-language mode 5.
+CI and release automation use Xcode 26.3 on GitHub's `macos-15` runner. The
+package declares Swift tools version 6.0 and Swift language mode 5.
 
 ## Local checks
 
@@ -56,7 +55,8 @@ Use one focused branch and commit per logical change:
 5. Merge only after required checks are green.
 
 A source-code push does not create a GitHub Release. Releases are a separate,
-explicitly triggered process described in [RELEASE.md](RELEASE.md).
+explicitly triggered process described in [DISTRIBUTION.md](DISTRIBUTION.md)
+and [RELEASE.md](RELEASE.md).
 
 ## Storage-safety invariants
 
