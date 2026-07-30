@@ -47,7 +47,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 25
     env:
-      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
 
     steps:
       - name: Check out the repository

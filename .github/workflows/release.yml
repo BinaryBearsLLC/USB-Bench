@@ -23,7 +23,7 @@ jobs:
     permissions:
       contents: write
     env:
-      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
       NOTARY_PROFILE: usb-bench-notary-${{ github.run_id }}
       RELEASE_VERSION: ${{ inputs.version }}
 
