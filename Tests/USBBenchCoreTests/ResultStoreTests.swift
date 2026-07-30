@@ -48,7 +48,7 @@ final class ResultStoreTests: XCTestCase {
       claimedCableSpeed: nil,
       profile: .complete,
       selection: .all,
-      fileSizeBytes: 2 * 1_024 * 1_024 * 1_024,
+      fileSizeBytes: Int64(2 * 1_024 * 1_024 * 1_024),
       passes: 3,
       volume: .init(
         name: "TEST",

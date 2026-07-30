@@ -10,7 +10,7 @@ final class BenchmarkEngineTests: XCTestCase {
 
     let configuration = BenchmarkConfiguration(
       targetDirectory: directory,
-      fileSizeBytes: 8 * 1_024 * 1_024,
+      fileSizeBytes: Int64(8 * 1_024 * 1_024),
       passes: 2,
       selection: .all,
       randomDurationSeconds: 0.08,
@@ -40,7 +40,7 @@ final class BenchmarkEngineTests: XCTestCase {
     let measurement = try BenchmarkEngine.run(
       configuration: .init(
         targetDirectory: directory,
-        fileSizeBytes: 8 * 1_024 * 1_024,
+        fileSizeBytes: Int64(8 * 1_024 * 1_024),
         passes: 2,
         selection: .sequential,
         verifiesIntegrity: true
@@ -71,7 +71,7 @@ final class BenchmarkEngineTests: XCTestCase {
     let measurement = try BenchmarkEngine.run(
       configuration: .init(
         targetDirectory: directory,
-        fileSizeBytes: 8 * 1_024 * 1_024,
+        fileSizeBytes: Int64(8 * 1_024 * 1_024),
         passes: 1,
         selection: .sequentialWrite,
         verifiesIntegrity: true
@@ -107,7 +107,7 @@ final class BenchmarkEngineTests: XCTestCase {
       try BenchmarkEngine.run(
         configuration: .init(
           targetDirectory: directory,
-          fileSizeBytes: 8 * 1_024 * 1_024,
+          fileSizeBytes: Int64(8 * 1_024 * 1_024),
           passes: 1,
           selection: .sequentialWrite
         ),
