@@ -537,34 +537,8 @@ final class AppModel: ObservableObject {
       text("Stabilità lettura %", "Read stability %"),
       text("Protocollo misura", "Measurement protocol"),
     ].joined(separator: ",")
-    let rows = results.map { result in
-      [
-        ISO8601DateFormatter().string(from: result.createdAt),
-        text.subject(result.subjectKind),
-        result.subjectName,
-        result.notes,
-        result.volume.name,
-        result.volume.mediaName ?? "",
-        result.volume.busProtocol ?? "",
-        result.volume.fileSystem ?? "",
-        result.volume.deviceIdentifier ?? "",
-        text.connection(result.volume.connectionKind) ?? "",
-        result.volume.negotiatedSpeed ?? "",
-        text.profile(result.profile),
-        "\(result.fileSizeBytes)",
-        number(result.measurement.sequentialWriteMBps),
-        number(result.measurement.sequentialWriteDurableMBps),
-        number(result.measurement.averageFlushSeconds),
-        number(result.measurement.sequentialReadMBps),
-        number(result.measurement.randomReadIOPS),
-        number(result.measurement.randomWriteIOPS),
-        number(result.measurement.writeStabilityPercent),
-        number(result.measurement.readStabilityPercent),
-        result.measurement.measurementProtocolVersion.map(String.init) ?? "1",
-      ]
-      .map(csvEscape)
-      .joined(separator: ",")
-    }
+    let dateFormatter = ISO8601DateFormatter()
+    let rows = results.map { csvRow(for: $0, dateFormatter: dateFormatter) }
 
     do {
       try ([header] + rows).joined(separator: "\n").write(
@@ -606,6 +580,39 @@ final class AppModel: ObservableObject {
 
   private func number(_ value: Double?) -> String {
     value.map { String(format: "%.2f", $0) } ?? ""
+  }
+
+  private func csvRow(
+    for result: SavedBenchmark,
+    dateFormatter: ISO8601DateFormatter
+  ) -> String {
+    let measurementProtocol =
+      result.measurement.measurementProtocolVersion.map { String($0) } ?? "1"
+    let columns: [String] = [
+      dateFormatter.string(from: result.createdAt),
+      text.subject(result.subjectKind),
+      result.subjectName,
+      result.notes,
+      result.volume.name,
+      result.volume.mediaName ?? "",
+      result.volume.busProtocol ?? "",
+      result.volume.fileSystem ?? "",
+      result.volume.deviceIdentifier ?? "",
+      text.connection(result.volume.connectionKind) ?? "",
+      result.volume.negotiatedSpeed ?? "",
+      text.profile(result.profile),
+      String(result.fileSizeBytes),
+      number(result.measurement.sequentialWriteMBps),
+      number(result.measurement.sequentialWriteDurableMBps),
+      number(result.measurement.averageFlushSeconds),
+      number(result.measurement.sequentialReadMBps),
+      number(result.measurement.randomReadIOPS),
+      number(result.measurement.randomWriteIOPS),
+      number(result.measurement.writeStabilityPercent),
+      number(result.measurement.readStabilityPercent),
+      measurementProtocol,
+    ]
+    return columns.map(csvEscape).joined(separator: ",")
   }
 
   private func csvEscape(_ value: String) -> String {
