@@ -83,6 +83,26 @@ final class BenchmarkEngineTests: XCTestCase {
     XCTAssertEqual(try temporaryBenchmarkFiles(in: directory), [])
   }
 
+  func testTemporaryPathIsAlreadyUnlinkedDuringProgress() throws {
+    let directory = try makeTemporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let observer = TemporaryFileVisibilityObserver(directory: directory)
+
+    _ = try BenchmarkEngine.run(
+      configuration: .init(
+        targetDirectory: directory,
+        fileSizeBytes: Int64(8 * 1_024 * 1_024),
+        passes: 1,
+        selection: .sequentialWrite,
+        verifiesIntegrity: true
+      )
+    ) { _ in
+      observer.inspect()
+    }
+
+    XCTAssertFalse(observer.sawVisibleTemporaryFile)
+  }
+
   func testRequiredFreeSpaceIncludesReserve() {
     let oneGiB = Int64(1_024 * 1_024 * 1_024)
     XCTAssertEqual(
@@ -151,5 +171,29 @@ private final class FractionRecorder: @unchecked Sendable {
     lock.lock()
     storage.append(value)
     lock.unlock()
+  }
+}
+
+private final class TemporaryFileVisibilityObserver: @unchecked Sendable {
+  private let directory: URL
+  private let lock = NSLock()
+  private var sawFile = false
+
+  init(directory: URL) {
+    self.directory = directory
+  }
+
+  var sawVisibleTemporaryFile: Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    return sawFile
+  }
+
+  func inspect() {
+    lock.lock()
+    defer { lock.unlock() }
+    guard !sawFile else { return }
+    let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+    sawFile = names.contains { $0.hasPrefix(".usbbench-") }
   }
 }

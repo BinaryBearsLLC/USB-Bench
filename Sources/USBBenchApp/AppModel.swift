@@ -88,6 +88,7 @@ final class AppModel: ObservableObject {
   @Published var selectedFolder: URL?
   @Published var selectedVolume: VolumeMetadata?
   @Published var isInspectingVolume = false
+  @Published var isPreparingTest = false
 
   @Published var profile: BenchmarkProfile = .quick
   @Published var singleSelection: BenchmarkSelection = .sequentialWrite
@@ -113,6 +114,7 @@ final class AppModel: ObservableObject {
   private var cancellation: BenchmarkCancellationToken?
   private var benchmarkTask: Task<Void, Never>?
   private var activity: NSObjectProtocol?
+  private var volumeInspectionID = UUID()
 
   init() {
     language =
@@ -175,6 +177,8 @@ final class AppModel: ObservableObject {
       && selectedVolume != nil
       && !subjectName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
       && !isRunning
+      && !isInspectingVolume
+      && !isPreparingTest
       && spacePreflight?.isEnough != false
   }
 
@@ -219,6 +223,18 @@ final class AppModel: ObservableObject {
   }
 
   var startDisabledReason: String? {
+    if isInspectingVolume {
+      return text(
+        "Attendi la lettura delle informazioni dell’unità.",
+        "Wait for the drive information to finish loading."
+      )
+    }
+    if isPreparingTest {
+      return text(
+        "Controllo finale dell’unità in corso…",
+        "Running the final drive preflight…"
+      )
+    }
     if selectedFolder == nil {
       return text("Scegli prima l’unità di test.", "Choose a test drive first.")
     }
@@ -258,14 +274,15 @@ final class AppModel: ObservableObject {
   }
 
   func chooseTarget() {
+    guard !isRunning, !isPreparingTest, !isInspectingVolume else { return }
     let panel = NSOpenPanel()
     panel.title = text(
       "Scegli l’unità o una cartella di test",
       "Choose a drive or test folder"
     )
     panel.message = text(
-      "USB Bench creerà e rimuoverà un solo file temporaneo nella posizione scelta.",
-      "USB Bench will create and remove one temporary file in the selected location."
+      "USB Bench crea un solo file temporaneo e lo scollega subito dal filesystem: resta disponibile soltanto per il test in corso.",
+      "USB Bench creates one temporary file and immediately unlinks it from the file system, leaving it available only to the active test."
     )
     panel.prompt = text("Usa questa posizione", "Use this location")
     panel.canChooseDirectories = true
@@ -281,17 +298,24 @@ final class AppModel: ObservableObject {
     selectedVolume = nil
     currentResult = nil
     isInspectingVolume = true
+    let inspectionID = UUID()
+    volumeInspectionID = inspectionID
 
-    Task {
+    Task { [weak self] in
       let metadata = await Task.detached(priority: .userInitiated) {
         SystemInspector.inspectVolume(at: url)
       }.value
-      selectedVolume = metadata
-      isInspectingVolume = false
+      guard let self,
+        self.volumeInspectionID == inspectionID,
+        self.selectedFolder == url
+      else { return }
+      self.selectedVolume = metadata
+      self.isInspectingVolume = false
     }
   }
 
   func startTest() {
+    guard !isRunning, !isPreparingTest, !isInspectingVolume else { return }
     guard let target = selectedFolder, selectedVolume != nil else {
       alert = .init(
         title: text("Seleziona un’unità", "Choose a drive"),
@@ -315,7 +339,38 @@ final class AppModel: ObservableObject {
     }
 
     let previouslyNegotiatedSpeed = selectedVolume?.negotiatedSpeed
-    let volume = SystemInspector.inspectVolume(at: target)
+    isPreparingTest = true
+    progress = .init(
+      stage: .preparing,
+      fraction: 0,
+      detail: "Rechecking free space, permissions, and the USB connection…"
+    )
+
+    Task { [weak self] in
+      let volume = await Task.detached(priority: .userInitiated) {
+        SystemInspector.inspectVolume(at: target)
+      }.value
+      guard let self else { return }
+      guard self.selectedFolder == target else {
+        self.isPreparingTest = false
+        return
+      }
+      self.isPreparingTest = false
+      self.beginTest(
+        target: target,
+        cleanName: cleanName,
+        previouslyNegotiatedSpeed: previouslyNegotiatedSpeed,
+        volume: volume
+      )
+    }
+  }
+
+  private func beginTest(
+    target: URL,
+    cleanName: String,
+    previouslyNegotiatedSpeed: String?,
+    volume: VolumeMetadata
+  ) {
     selectedVolume = volume
     if let before = previouslyNegotiatedSpeed,
       let now = volume.negotiatedSpeed,
@@ -570,6 +625,7 @@ final class AppModel: ObservableObject {
 
   private func finishRun() {
     isRunning = false
+    isPreparingTest = false
     cancellation = nil
     benchmarkTask = nil
     if let activity {
@@ -612,11 +668,7 @@ final class AppModel: ObservableObject {
       number(result.measurement.readStabilityPercent),
       measurementProtocol,
     ]
-    return columns.map(csvEscape).joined(separator: ",")
-  }
-
-  private func csvEscape(_ value: String) -> String {
-    "\"\(value.replacingOccurrences(of: "\"", with: "\"\""))\""
+    return columns.map { CSVEncoding.field($0) }.joined(separator: ",")
   }
 
   private func localizedError(_ error: Error) -> String {
@@ -632,6 +684,8 @@ final class AppModel: ObservableObject {
       "\(Formatters.bytes(required)) is required; \(Formatters.bytes(available)) is available."
     case .cannotCreateTestFile(let code):
       "Could not create the temporary file (error \(code))."
+    case .cannotSecureTestFile(let code):
+      "Could not make the temporary file anonymous (error \(code)). No benchmark data was written."
     case .cacheBypassUnavailable(let code):
       "macOS could not disable its file cache for this drive (error \(code)). The test was stopped to avoid a misleading result."
     case .cannotAllocateBuffer:

@@ -171,10 +171,11 @@ struct NewTestView: View {
           model.chooseTarget()
         }
         .buttonStyle(.bordered)
+        .disabled(model.isRunning || model.isPreparingTest || model.isInspectingVolume)
         .help(
           text(
-            "L’app crea solo un file temporaneo con nome univoco e lo rimuove al termine.",
-            "The app creates one uniquely named temporary file and removes it when finished."
+            "L’app crea un file temporaneo con nome univoco e lo rende subito anonimo.",
+            "The app creates one uniquely named temporary file and immediately makes it anonymous."
           )
         )
       }
@@ -508,8 +509,8 @@ struct NewTestView: View {
 
       Label(
         text(
-          "L’app non legge i file esistenti. Crea e rimuove solo il proprio file temporaneo.",
-          "The app does not read existing files. It creates and removes only its own temporary file."
+          "L’app non legge i file esistenti. Il proprio file di test viene scollegato dal filesystem prima di scrivere dati.",
+          "The app does not read existing files. Its test file is unlinked from the file system before any data is written."
         ),
         systemImage: "lock.shield"
       )
@@ -519,8 +520,19 @@ struct NewTestView: View {
       Button {
         model.startTest()
       } label: {
-        Label(text("Avvia test", "Start test"), systemImage: "play.fill")
-          .frame(maxWidth: .infinity)
+        HStack {
+          if model.isPreparingTest {
+            ProgressView()
+              .controlSize(.small)
+          }
+          Label(
+            model.isPreparingTest
+              ? text("Controllo unità…", "Checking drive…")
+              : text("Avvia test", "Start test"),
+            systemImage: model.isPreparingTest ? "externaldrive.badge.checkmark" : "play.fill"
+          )
+        }
+        .frame(maxWidth: .infinity)
       }
       .buttonStyle(.borderedProminent)
       .controlSize(.large)

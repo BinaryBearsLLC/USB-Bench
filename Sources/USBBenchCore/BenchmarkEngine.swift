@@ -6,6 +6,7 @@ public enum BenchmarkError: LocalizedError {
   case targetNotWritable
   case insufficientSpace(required: Int64, available: Int64)
   case cannotCreateTestFile(Int32)
+  case cannotSecureTestFile(Int32)
   case cacheBypassUnavailable(Int32)
   case cannotAllocateBuffer
   case writeFailed(Int32)
@@ -23,6 +24,8 @@ public enum BenchmarkError: LocalizedError {
       "Not enough free space: \(Self.format(required)) required, \(Self.format(available)) available."
     case .cannotCreateTestFile(let code):
       "Could not create the temporary file (error \(code))."
+    case .cannotSecureTestFile(let code):
+      "Could not make the temporary file anonymous (error \(code)). No benchmark data was written."
     case .cacheBypassUnavailable(let code):
       "macOS could not disable caching for this drive (error \(code)). The test stopped to avoid reporting a misleading result."
     case .cannotAllocateBuffer:
@@ -90,10 +93,13 @@ public enum BenchmarkEngine {
       throw BenchmarkError.cannotCreateTestFile(errno)
     }
 
-    defer {
+    guard unlinkRetryingInterrupts(temporaryURL.path) == 0 else {
+      let unlinkError = errno
       close(descriptor)
-      unlink(temporaryURL.path)
+      _ = unlinkRetryingInterrupts(temporaryURL.path)
+      throw BenchmarkError.cannotSecureTestFile(unlinkError)
     }
+    defer { close(descriptor) }
 
     guard fcntl(descriptor, F_NOCACHE, 1) == 0 else {
       throw BenchmarkError.cacheBypassUnavailable(errno)
@@ -317,7 +323,7 @@ public enum BenchmarkEngine {
       integrityVerified = true
     }
 
-    report(.init(stage: .cleaning, fraction: 0.5, detail: "Removing the temporary file."))
+    report(.init(stage: .cleaning, fraction: 0.5, detail: "Closing the anonymous test file."))
 
     let readValues =
       samples
@@ -415,19 +421,12 @@ public enum BenchmarkEngine {
     while offset < fileSize {
       try checkCancellation(cancellation)
       let count = Int(min(Int64(bufferSize), fileSize - offset))
-      var written = 0
-      while written < count {
-        let result = pwrite(
-          descriptor,
-          buffer.advanced(by: written),
-          count - written,
-          off_t(offset + Int64(written))
-        )
-        guard result > 0 else {
-          throw BenchmarkError.writeFailed(errno)
-        }
-        written += result
-      }
+      try writeExactly(
+        descriptor: descriptor,
+        buffer: buffer,
+        count: count,
+        offset: off_t(offset)
+      )
       offset += Int64(count)
 
       let localFraction = Double(offset) / Double(fileSize)
@@ -469,19 +468,12 @@ public enum BenchmarkEngine {
     while offset < fileSize {
       try checkCancellation(cancellation)
       let count = Int(min(Int64(bufferSize), fileSize - offset))
-      var readCount = 0
-      while readCount < count {
-        let result = pread(
-          descriptor,
-          readBuffer.advanced(by: readCount),
-          count - readCount,
-          off_t(offset + Int64(readCount))
-        )
-        guard result > 0 else {
-          throw BenchmarkError.readFailed(errno)
-        }
-        readCount += result
-      }
+      try readExactly(
+        descriptor: descriptor,
+        buffer: readBuffer,
+        count: count,
+        offset: off_t(offset)
+      )
       offset += Int64(count)
 
       let localFraction = Double(offset) / Double(fileSize)
@@ -515,19 +507,12 @@ public enum BenchmarkEngine {
     while offset < fileSize {
       try checkCancellation(cancellation)
       let count = Int(min(Int64(bufferSize), fileSize - offset))
-      var readCount = 0
-      while readCount < count {
-        let result = pread(
-          descriptor,
-          readBuffer.advanced(by: readCount),
-          count - readCount,
-          off_t(offset + Int64(readCount))
-        )
-        guard result > 0 else {
-          throw BenchmarkError.readFailed(errno)
-        }
-        readCount += result
-      }
+      try readExactly(
+        descriptor: descriptor,
+        buffer: readBuffer,
+        count: count,
+        offset: off_t(offset)
+      )
       if memcmp(expectedBuffer, readBuffer, count) != 0 {
         throw BenchmarkError.integrityMismatch
       }
@@ -573,24 +558,21 @@ public enum BenchmarkEngine {
       let block = state % blockCount
       let offset = off_t(block * UInt64(blockSize))
 
-      let result: Int
       if isWrite {
         let patternOffset = Int(offset) % max(patternBufferSize, blockSize)
-        result = pwrite(
-          descriptor,
-          buffer.advanced(by: patternOffset),
-          blockSize,
-          offset
+        try writeExactly(
+          descriptor: descriptor,
+          buffer: buffer.advanced(by: patternOffset),
+          count: blockSize,
+          offset: offset
         )
       } else {
-        result = pread(descriptor, buffer, blockSize, offset)
-      }
-      guard result == blockSize else {
-        if isWrite {
-          throw BenchmarkError.writeFailed(errno)
-        } else {
-          throw BenchmarkError.readFailed(errno)
-        }
+        try readExactly(
+          descriptor: descriptor,
+          buffer: buffer,
+          count: blockSize,
+          offset: offset
+        )
       }
       operations += 1
 
@@ -621,6 +603,63 @@ public enum BenchmarkEngine {
   private static func checkCancellation(_ token: BenchmarkCancellationToken) throws {
     if token.isCancelled {
       throw BenchmarkError.cancelled
+    }
+  }
+
+  private static func writeExactly(
+    descriptor: Int32,
+    buffer: UnsafeMutableRawPointer,
+    count: Int,
+    offset: off_t
+  ) throws {
+    var completed = 0
+    while completed < count {
+      let result = pwrite(
+        descriptor,
+        buffer.advanced(by: completed),
+        count - completed,
+        offset + off_t(completed)
+      )
+      if result > 0 {
+        completed += result
+      } else if result < 0, errno == EINTR {
+        continue
+      } else {
+        throw BenchmarkError.writeFailed(result == 0 ? EIO : errno)
+      }
+    }
+  }
+
+  private static func readExactly(
+    descriptor: Int32,
+    buffer: UnsafeMutableRawPointer,
+    count: Int,
+    offset: off_t
+  ) throws {
+    var completed = 0
+    while completed < count {
+      let result = pread(
+        descriptor,
+        buffer.advanced(by: completed),
+        count - completed,
+        offset + off_t(completed)
+      )
+      if result > 0 {
+        completed += result
+      } else if result < 0, errno == EINTR {
+        continue
+      } else {
+        throw BenchmarkError.readFailed(result == 0 ? EIO : errno)
+      }
+    }
+  }
+
+  private static func unlinkRetryingInterrupts(_ path: String) -> Int32 {
+    while true {
+      let result = unlink(path)
+      if result == 0 || errno != EINTR {
+        return result
+      }
     }
   }
 
