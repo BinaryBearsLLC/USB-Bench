@@ -77,8 +77,10 @@ setup that produced it, making comparisons useful instead of ambiguous.
 
 USB Bench does not format, unmount, or access raw disks. Each benchmark creates
 one uniquely named `.usbbench-<UUID>.tmp` file inside the selected directory.
-The engine removes only that file when the test completes, fails, or is
-cancelled. Existing files are never opened, read, modified, or deleted.
+Before writing benchmark data, the engine immediately unlinks that exact file;
+it remains available only through the active file descriptor and macOS reclaims
+its storage when the descriptor closes. Existing files are never opened, read,
+modified, or deleted.
 
 The automated test suite uses isolated temporary directories and a sentinel
 file to enforce this boundary.
@@ -108,7 +110,9 @@ dependency. The interface is English-first and includes Italian localization.
 ```
 
 The quality gate checks formatting, tests, assets, packaging, and the generated
-DMG. Local packages are ad-hoc signed and are appropriate for validation only.
+professional Finder DMG. App packaging and DMG authoring are separate scripts;
+there is no `build.command`. Local packages are ad-hoc signed and are
+appropriate for validation only.
 Official downloads are created only by the manually triggered release workflow
 from a signed tag, then Developer ID signed, notarized by Apple, stapled, and
 verified before publication.

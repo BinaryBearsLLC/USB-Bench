@@ -34,8 +34,9 @@ Changes to the benchmark engine must preserve all of the following:
 
 1. No formatting, unmounting, or raw-disk writes.
 2. No opening or enumeration of the user's existing files.
-3. Writes are limited to one `.usbbench-<UUID>.tmp` file.
-4. Cleanup is limited to the exact temporary URL created by the current run.
+3. Writes are limited to one exclusively created `.usbbench-<UUID>.tmp` file.
+4. The test file is unlinked before benchmark data is written and remains
+   available only through the active file descriptor.
 5. Free space is checked before the benchmark and immediately before I/O.
 6. The benchmark stops if `F_NOCACHE` cannot be enabled.
 7. Automated tests use isolated temporary directories.

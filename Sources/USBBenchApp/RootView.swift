@@ -50,10 +50,9 @@ struct RootView: View {
       .listStyle(.sidebar)
 
       Divider()
-      Link(destination: URL(string: "https://binarybears.com")!) {
+      Link(destination: Branding.companyURL) {
         HStack(spacing: 9) {
-          Image(systemName: "pawprint.fill")
-            .foregroundStyle(.secondary)
+          CompanyLogo(size: 30)
           VStack(alignment: .leading, spacing: 1) {
             Text("BinaryBears")
               .font(.caption.weight(.semibold))

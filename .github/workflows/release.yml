@@ -105,7 +105,9 @@ jobs:
             Sources Tests Package.swift
 
       - name: Verify canonical brand assets
-        run: ./scripts/verify_brand_assets.sh
+        run: |
+          ./scripts/verify_brand_assets.sh
+          ./scripts/verify_version.sh
 
       - name: Run the test suite
         run: swift test --disable-sandbox

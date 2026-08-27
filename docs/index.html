@@ -63,7 +63,7 @@
       "name": "USB Bench",
       "applicationCategory": "UtilitiesApplication",
       "operatingSystem": "macOS 14 or later",
-      "softwareVersion": "1.2.0",
+      "softwareVersion": "1.3.0",
       "description": "A native, open-source macOS benchmark for USB storage devices, cables, hubs, enclosures, and ports.",
       "url": "https://binarybearsllc.github.io/USB-Bench/",
       "image": "https://binarybearsllc.github.io/USB-Bench/assets/usb-bench-icon.png",
@@ -1637,7 +1637,7 @@
         <div class="hero-copy reveal">
           <p class="eyebrow">
             <span class="eyebrow-dot" aria-hidden="true"></span>
-            <span id="latestVersion">v1.2.0</span>
+            <span id="latestVersion">v1.3.0</span>
             <span aria-hidden="true">·</span>
             <span data-i18n="free">Open source</span>
             <span aria-hidden="true">·</span>
@@ -1908,8 +1908,8 @@
             <p class="section-kicker" data-i18n="safetyKicker">Progettata con cautela</p>
             <h2 data-i18n="safetyTitle">I tuoi file non fanno parte del benchmark.</h2>
             <p data-i18n="safetyLead">
-              L’app crea un file temporaneo con nome univoco nella posizione
-              scelta e rimuove esclusivamente quel file. Nessun accesso al disco grezzo.
+              L’app crea un file temporaneo con nome univoco e lo scollega dal
+              filesystem prima di scrivere dati. Nessun accesso al disco grezzo.
             </p>
           </div>
 
@@ -1946,7 +1946,7 @@
 
           <div class="hero-actions">
             <a class="button button-primary" id="downloadButtonBottom" href="#">
-              <span id="downloadLabelBottom">Scarica v1.2.0</span>
+              <span id="downloadLabelBottom">Scarica v1.3.0</span>
               <span class="button-arrow" aria-hidden="true">↓</span>
             </a>
             <a
@@ -2002,7 +2002,7 @@
     (() => {
       "use strict";
 
-      const FALLBACK_VERSION = "v1.2.0";
+      const FALLBACK_VERSION = "v1.3.0";
       const THEMES = ["auto", "light", "dark"];
       const translations = {
         it: {
@@ -2082,7 +2082,7 @@
           safetyKicker: "Progettata con cautela",
           safetyTitle: "I tuoi file non fanno parte del benchmark.",
           safetyLead:
-            "L’app crea un file temporaneo con nome univoco nella posizione scelta e rimuove esclusivamente quel file. Nessun accesso al disco grezzo.",
+            "L’app crea un file temporaneo con nome univoco e lo scollega dal filesystem prima di scrivere dati. Nessun accesso al disco grezzo.",
           safetyOne: "Non formatta e non smonta l’unità",
           safetyTwo: "Non apre, legge o modifica i file esistenti",
           safetyThree: "Interrompe il test se la cache non può essere esclusa",
@@ -2177,7 +2177,7 @@
           safetyKicker: "Designed with care",
           safetyTitle: "Your files are not part of the benchmark.",
           safetyLead:
-            "The app creates one uniquely named temporary file in the selected location and removes only that file. No raw-disk access.",
+            "The app creates one uniquely named temporary file and unlinks it before writing data. No raw-disk access.",
           safetyOne: "Does not format or unmount the drive",
           safetyTwo: "Does not open, read, or modify existing files",
           safetyThree: "Stops if the system cache cannot be bypassed",

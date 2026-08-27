@@ -17,19 +17,25 @@ swift format lint --recursive --parallel --strict \
   Sources Tests Package.swift
 
 plutil -lint Packaging/Info.plist
+plutil -convert xml1 -o /dev/null Packaging/DMG/layout.json
 zsh -n \
   scripts/check_all.sh \
   scripts/notarize_release.sh \
   scripts/package_app.sh \
   scripts/sync_brand_assets.sh \
   scripts/verify_brand_assets.sh \
-  scripts/verify_release.sh
+  scripts/verify_release.sh \
+  scripts/verify_version.sh
+bash -n scripts/make_dmg.sh
+osacompile -o "$QUALITY_CACHE_ROOT/configure-dmg.scpt" scripts/configure_dmg.applescript
 ./scripts/verify_brand_assets.sh
+./scripts/verify_version.sh
 
 swift test \
   --disable-sandbox \
   --scratch-path "$QUALITY_CACHE_ROOT/swiftpm-tests"
 ./scripts/package_app.sh
+./scripts/make_dmg.sh
 ./scripts/verify_release.sh
 
 echo "All local quality gates passed."
