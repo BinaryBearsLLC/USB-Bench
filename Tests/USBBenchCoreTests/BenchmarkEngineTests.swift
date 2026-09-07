@@ -144,10 +144,43 @@ final class BenchmarkEngineTests: XCTestCase {
   }
 
   private func makeTemporaryDirectory() throws -> URL {
-    let url = FileManager.default.temporaryDirectory
+    let root =
+      ProcessInfo.processInfo.environment["USB_BENCH_TEST_DIRECTORY"]
+      .map { URL(fileURLWithPath: $0, isDirectory: true) }
+      ?? FileManager.default.temporaryDirectory
+    let url =
+      root
       .appendingPathComponent("USBBenchTests-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url
+  }
+
+  func testCancellationDuringIOPreservesSentinelAndCleansFile() throws {
+    let directory = try makeTemporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let sentinel = directory.appendingPathComponent("test-sentinel.txt")
+    let contents = Data("qualification sentinel".utf8)
+    try contents.write(to: sentinel)
+    let token = BenchmarkCancellationToken()
+    XCTAssertThrowsError(
+      try BenchmarkEngine.run(
+        configuration: .init(
+          targetDirectory: directory,
+          fileSizeBytes: Int64(32 * 1_024 * 1_024),
+          passes: 2,
+          selection: .all
+        ),
+        cancellation: token
+      ) { update in
+        if update.stage == .sequentialWrite { token.cancel() }
+      }
+    ) { error in
+      guard case BenchmarkError.cancelled = error else {
+        return XCTFail("Unexpected error: \(error)")
+      }
+    }
+    XCTAssertEqual(try Data(contentsOf: sentinel), contents)
+    XCTAssertEqual(try temporaryBenchmarkFiles(in: directory), [])
   }
 
   private func temporaryBenchmarkFiles(in directory: URL) throws -> [String] {

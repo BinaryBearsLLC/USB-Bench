@@ -1901,6 +1901,15 @@
       </div>
     </section>
 
+    <section class="section" id="whats-new">
+      <div class="container">
+        <p class="section-kicker">USB Bench 1.3.0</p>
+        <h2 data-i18n="updateTitle">Più fluida, dall’installazione al test.</h2>
+        <p class="section-lead" data-i18n="updateBody">Nuovo installer con trascinamento in Applications, logo BinaryBears, controllo dell’unità in background ed esportazione CSV più sicura.</p>
+        <a href="https://github.com/BinaryBearsLLC/USB-Bench/blob/main/CHANGELOG.md" data-i18n="updateNotes">Leggi le note di versione</a>
+      </div>
+    </section>
+
     <section class="section" id="safety">
       <div class="container">
         <div class="safety-panel reveal">
@@ -2025,7 +2034,10 @@
           releaseDetecting: "Ricerca dell’ultima release GitHub…",
           releaseLatest: "Ultima release GitHub",
           releaseCached: "Ultima release disponibile",
-          releaseFallback: "La release verrà rilevata automaticamente su GitHub Pages",
+          releaseFallback: "Consulta GitHub per la versione pubblicata disponibile",
+          updateTitle: "Più fluida, dall’installazione al test.",
+          updateBody: "Nuovo installer con trascinamento in Applications, logo BinaryBears, controllo dell’unità in background ed esportazione CSV più sicura.",
+          updateNotes: "Leggi le note di versione",
           mockNewTest: "Nuovo test",
           mockResults: "Risultati",
           mockComparison: "Confronto",
@@ -2120,7 +2132,10 @@
           releaseDetecting: "Checking the latest GitHub Release…",
           releaseLatest: "Latest GitHub Release",
           releaseCached: "Latest available release",
-          releaseFallback: "The release will be detected automatically on GitHub Pages",
+          releaseFallback: "Check GitHub for the available published release",
+          updateTitle: "Smoother, from installation to testing.",
+          updateBody: "A new drag-to-Applications installer, BinaryBears branding, background drive checks, and safer CSV exports.",
+          updateNotes: "Read the release notes",
           mockNewTest: "New test",
           mockResults: "Results",
           mockComparison: "Comparison",
@@ -2373,10 +2388,10 @@
         const size = formatBytes(release.size);
         const date = formatDate(release.date);
 
-        elements.latestVersion.textContent = version;
-        elements.downloadLabelBottom.textContent = replace(t("downloadVersion"), {
+        elements.latestVersion.textContent = state.release ? version : "macOS 14+";
+        elements.downloadLabelBottom.textContent = state.release ? replace(t("downloadVersion"), {
           version
-        });
+        }) : t("allReleases");
 
         if (release.downloadURL) {
           elements.downloadButton.href = release.downloadURL;
@@ -2384,8 +2399,9 @@
           elements.downloadButton.removeAttribute("aria-disabled");
           elements.downloadButtonBottom.removeAttribute("aria-disabled");
         } else {
-          elements.downloadButton.href = "#download";
-          elements.downloadButtonBottom.href = release.releaseURL || "#";
+          const fallbackURL = elements.releasesButton.href;
+          elements.downloadButton.href = fallbackURL;
+          elements.downloadButtonBottom.href = fallbackURL;
         }
 
         const sourceLabel =
@@ -2418,7 +2434,7 @@
         const cacheKey = `usbBenchRelease:${repository}`;
         try {
           const response = await fetch(
-            `https://api.github.com/repos/${repository}/releases?per_page=1`,
+            `https://api.github.com/repos/${repository}/releases/latest`,
             {
               headers: {
                 Accept: "application/vnd.github+json"
@@ -2426,8 +2442,7 @@
             }
           );
           if (!response.ok) throw new Error(`GitHub API ${response.status}`);
-          const releases = await response.json();
-          const data = Array.isArray(releases) ? releases[0] : null;
+          const data = await response.json();
           if (!data) {
             state.releaseSource = "fallback";
             renderRelease();

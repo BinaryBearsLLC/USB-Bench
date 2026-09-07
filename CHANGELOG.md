@@ -15,6 +15,7 @@ The project follows [Semantic Versioning](https://semver.org/).
 - A professional Finder DMG with custom artwork, drag-to-Applications layout,
   volume icon, website shortcut, checksum, and mounted-image verification.
 - Focused tests for command timeouts and safe CSV field encoding.
+- Attached-volume test support and cancellation-during-I/O regression coverage.
 
 ### Changed
 
@@ -32,6 +33,9 @@ The project follows [Semantic Versioning](https://semver.org/).
 - Neutralized formula-like CSV values before export to spreadsheet software.
 - Prevented stale volume-inspection results and duplicate preflight starts from
   racing with a newer selection.
+- Completed the Italian temporary-space cleanup status translation.
+- Website download discovery now selects the latest stable release and keeps
+  usable GitHub Releases links when the API is unavailable.
 
 ## 1.2.0
 

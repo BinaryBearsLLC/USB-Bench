@@ -54,6 +54,25 @@ The two packaging stages can also be run explicitly:
 `package_app.sh` creates only the application. `make_dmg.sh` authors the DMG;
 the project intentionally has no `build.command` launcher.
 
+## Qualification on an attached volume
+
+With explicit permission to write synthetic test data to that volume:
+
+```sh
+USB_BENCH_TEST_DIRECTORY=/Volumes/TEST-DRIVE \
+  swift test --disable-sandbox --filter BenchmarkEngineTests
+swift run -c release --disable-sandbox USBBenchProbe \
+  benchmark /Volumes/TEST-DRIVE 2048 2
+```
+
+The tests create isolated UUID directories and remove their own fixtures. The
+probe uses the engine's anonymous temporary file. Do not disconnect the drive
+during a run. A network-mounted filesystem qualifies that mounted stack, not
+the underlying disk's native filesystem or raw performance. Keep raw probe
+output private: it contains volume names, paths, and device identifiers.
+
+See [1.3.0 local validation](VALIDATION-1.3.0.md) for the current evidence.
+
 ## Change workflow
 
 Use one focused branch and commit per logical change:

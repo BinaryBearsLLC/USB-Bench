@@ -24,6 +24,9 @@ Run all checks before creating a tag:
 The local quality gate packages the app and then authors the professional DMG
 with an ad-hoc signature. Never publish that DMG as an official release.
 
+The [1.3.0 validation report](VALIDATION-1.3.0.md) records local and attached-volume
+checks separately from the still-required public release gates.
+
 ## 2. Sign source commits and tags
 
 Git commit signing uses a Git signing key. It does not use the Apple Developer
