@@ -6,6 +6,37 @@ The project follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## 1.3.0
+
+### Added
+
+- A sanitized, transparent BinaryBears raster logo in the application, with
+  company attribution linked to the official website.
+- A professional Finder DMG with custom artwork, drag-to-Applications layout,
+  volume icon, website shortcut, checksum, and mounted-image verification.
+- Focused tests for command timeouts and safe CSV field encoding.
+- Attached-volume test support and cancellation-during-I/O regression coverage.
+
+### Changed
+
+- The final volume preflight now runs outside the main actor and has a bounded
+  `diskutil` execution time, keeping the interface responsive.
+- Application packaging and professional DMG creation are separate, explicit
+  steps so the signed app can be notarized before it is placed in the DMG.
+- Temporary benchmark files are unlinked immediately after their exclusive
+  creation and remain accessible only through the active file descriptor.
+
+### Fixed
+
+- Retried interrupted and partial POSIX reads and writes instead of reporting
+  avoidable benchmark failures.
+- Neutralized formula-like CSV values before export to spreadsheet software.
+- Prevented stale volume-inspection results and duplicate preflight starts from
+  racing with a newer selection.
+- Completed the Italian temporary-space cleanup status translation.
+- Website download discovery now selects the latest stable release and keeps
+  usable GitHub Releases links when the API is unavailable.
+
 ## 1.2.0
 
 ### Added

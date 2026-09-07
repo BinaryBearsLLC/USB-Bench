@@ -176,6 +176,7 @@ struct AppText {
       "Confronto i dati senza influenzare la velocità misurata."
     case "4K blocks, queue depth 1": "Blocchi 4K, coda singola"
     case "Removing the temporary file.": "Rimuovo il file temporaneo."
+    case "Closing the anonymous test file.": "Libero lo spazio temporaneo del test."
     case "Test complete.": "Test completato."
     case "Test cancelled and temporary file removed.":
       "Test annullato e file rimosso."

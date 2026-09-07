@@ -61,15 +61,16 @@ struct SettingsView: View {
             text("Sviluppata da", "Developed by"),
             value: "BinaryBears"
           )
-          LabeledContent(
-            text("Società", "Company"),
-            value: "BinaryBears LLC"
-          )
+          LabeledContent {
+            Link("BinaryBears LLC", destination: Branding.companyURL)
+          } label: {
+            Text(text("Società", "Company"))
+          }
           LabeledContent(
             text("Licenza", "License"),
             value: "MIT"
           )
-          Link("binarybears.com", destination: URL(string: "https://binarybears.com")!)
+          Link("binarybears.com", destination: Branding.companyURL)
             .help(
               text(
                 "Apre il sito BinaryBears nel browser.",

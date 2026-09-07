@@ -21,8 +21,11 @@ Run all checks before creating a tag:
 ./scripts/check_all.sh
 ```
 
-The local packaging command uses an ad-hoc signature by default. Never publish
-that DMG as an official release.
+The local quality gate packages the app and then authors the professional DMG
+with an ad-hoc signature. Never publish that DMG as an official release.
+
+The [1.3.0 validation report](VALIDATION-1.3.0.md) records local and attached-volume
+checks separately from the still-required public release gates.
 
 ## 2. Sign source commits and tags
 
@@ -122,8 +125,10 @@ SIGNING_IDENTITY="Developer ID Application: BinaryBears LLC (TEAMID)" \
 ```
 
 The script builds for Apple Silicon, enables Hardened Runtime and a secure
-timestamp, signs the application and DMG, submits the DMG with `notarytool`,
-staples and validates the ticket, checks Gatekeeper, and writes a SHA-256 file.
+timestamp, signs and notarizes the application first, staples its ticket, and
+only then places it in the professional DMG. It signs, notarizes, staples, and
+mount-verifies the DMG, checks Gatekeeper, and writes a SHA-256 file after the
+final ticket is attached.
 
 ## 4. One-time GitHub setup
 
@@ -180,8 +185,9 @@ available to GitHub.
 This manual action is the only release trigger. The workflow requires the
 matching signed tag, verifies that the tag belongs to `main`, checks the
 application version, runs tests, imports Apple credentials into an isolated
-temporary Keychain, signs and notarizes the DMG, validates Gatekeeper, and only
-then creates the public GitHub Release with the DMG and SHA-256 file.
+temporary Keychain, signs and notarizes both app and DMG, validates Gatekeeper
+and the mounted Finder image, and only then creates the public GitHub Release
+with the DMG and SHA-256 file.
 
 If any check, signing operation, or notarization step fails, no GitHub Release
 is published. Re-running an already published version is also rejected instead

@@ -45,8 +45,8 @@ struct InformationView: View {
           infoRow(
             text("File temporaneo", "Temporary file"),
             text(
-              "Viene creato nella posizione scelta con un nome univoco e rimosso al termine.",
-              "It is created in the selected location with a unique name and removed when finished."
+              "Viene creato con un nome univoco e scollegato subito dal filesystem; la chiusura del test libera automaticamente lo spazio.",
+              "It is created with a unique name and immediately unlinked; closing the test automatically reclaims its space."
             )
           )
           infoRow(
@@ -96,12 +96,12 @@ struct InformationView: View {
           SectionTitle(text("BinaryBears", "BinaryBears"))
           Text(
             text(
-              "USB Bench è sviluppata da BinaryBears, società BinaryBears LLC, ed è distribuita come software open source con licenza MIT.",
-              "USB Bench is developed by BinaryBears, a BinaryBears LLC product, and released as open-source software under the MIT License."
+              "USB Bench è sviluppata da BinaryBears ed è distribuita come software open source con licenza MIT.",
+              "USB Bench is developed by BinaryBears and released as open-source software under the MIT License."
             )
           )
           .foregroundStyle(.secondary)
-          Link("binarybears.com", destination: URL(string: "https://binarybears.com")!)
+          Link("BinaryBears LLC · binarybears.com", destination: Branding.companyURL)
             .help(
               text(
                 "Apre il sito BinaryBears nel browser.",

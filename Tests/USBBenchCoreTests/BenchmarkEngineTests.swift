@@ -83,6 +83,26 @@ final class BenchmarkEngineTests: XCTestCase {
     XCTAssertEqual(try temporaryBenchmarkFiles(in: directory), [])
   }
 
+  func testTemporaryPathIsAlreadyUnlinkedDuringProgress() throws {
+    let directory = try makeTemporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let observer = TemporaryFileVisibilityObserver(directory: directory)
+
+    _ = try BenchmarkEngine.run(
+      configuration: .init(
+        targetDirectory: directory,
+        fileSizeBytes: Int64(8 * 1_024 * 1_024),
+        passes: 1,
+        selection: .sequentialWrite,
+        verifiesIntegrity: true
+      )
+    ) { _ in
+      observer.inspect()
+    }
+
+    XCTAssertFalse(observer.sawVisibleTemporaryFile)
+  }
+
   func testRequiredFreeSpaceIncludesReserve() {
     let oneGiB = Int64(1_024 * 1_024 * 1_024)
     XCTAssertEqual(
@@ -124,10 +144,43 @@ final class BenchmarkEngineTests: XCTestCase {
   }
 
   private func makeTemporaryDirectory() throws -> URL {
-    let url = FileManager.default.temporaryDirectory
+    let root =
+      ProcessInfo.processInfo.environment["USB_BENCH_TEST_DIRECTORY"]
+      .map { URL(fileURLWithPath: $0, isDirectory: true) }
+      ?? FileManager.default.temporaryDirectory
+    let url =
+      root
       .appendingPathComponent("USBBenchTests-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url
+  }
+
+  func testCancellationDuringIOPreservesSentinelAndCleansFile() throws {
+    let directory = try makeTemporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let sentinel = directory.appendingPathComponent("test-sentinel.txt")
+    let contents = Data("qualification sentinel".utf8)
+    try contents.write(to: sentinel)
+    let token = BenchmarkCancellationToken()
+    XCTAssertThrowsError(
+      try BenchmarkEngine.run(
+        configuration: .init(
+          targetDirectory: directory,
+          fileSizeBytes: Int64(32 * 1_024 * 1_024),
+          passes: 2,
+          selection: .all
+        ),
+        cancellation: token
+      ) { update in
+        if update.stage == .sequentialWrite { token.cancel() }
+      }
+    ) { error in
+      guard case BenchmarkError.cancelled = error else {
+        return XCTFail("Unexpected error: \(error)")
+      }
+    }
+    XCTAssertEqual(try Data(contentsOf: sentinel), contents)
+    XCTAssertEqual(try temporaryBenchmarkFiles(in: directory), [])
   }
 
   private func temporaryBenchmarkFiles(in directory: URL) throws -> [String] {
@@ -151,5 +204,29 @@ private final class FractionRecorder: @unchecked Sendable {
     lock.lock()
     storage.append(value)
     lock.unlock()
+  }
+}
+
+private final class TemporaryFileVisibilityObserver: @unchecked Sendable {
+  private let directory: URL
+  private let lock = NSLock()
+  private var sawFile = false
+
+  init(directory: URL) {
+    self.directory = directory
+  }
+
+  var sawVisibleTemporaryFile: Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    return sawFile
+  }
+
+  func inspect() {
+    lock.lock()
+    defer { lock.unlock() }
+    guard !sawFile else { return }
+    let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+    sawFile = names.contains { $0.hasPrefix(".usbbench-") }
   }
 }

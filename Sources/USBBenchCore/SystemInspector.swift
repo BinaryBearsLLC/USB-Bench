@@ -67,16 +67,37 @@ public enum SystemInspector {
   }
 
   private static func diskUtilityInfo(for target: String) -> [String: Any] {
+    propertyListOutput(
+      executableURL: URL(fileURLWithPath: "/usr/sbin/diskutil"),
+      arguments: ["info", "-plist", target],
+      timeout: 3
+    )
+  }
+
+  static func propertyListOutput(
+    executableURL: URL,
+    arguments: [String],
+    timeout: TimeInterval
+  ) -> [String: Any] {
     let process = Process()
     let output = Pipe()
-    process.executableURL = URL(fileURLWithPath: "/usr/sbin/diskutil")
-    process.arguments = ["info", "-plist", target]
+    let termination = DispatchSemaphore(value: 0)
+    process.executableURL = executableURL
+    process.arguments = arguments
     process.standardOutput = output
     process.standardError = FileHandle.nullDevice
+    process.terminationHandler = { _ in termination.signal() }
 
     do {
       try process.run()
-      process.waitUntilExit()
+      if termination.wait(timeout: .now() + max(timeout, 0.01)) == .timedOut {
+        process.terminate()
+        if termination.wait(timeout: .now() + 0.25) == .timedOut {
+          kill(process.processIdentifier, SIGKILL)
+          _ = termination.wait(timeout: .now() + 1)
+        }
+        return [:]
+      }
       guard process.terminationStatus == 0 else { return [:] }
       let data = output.fileHandleForReading.readDataToEndOfFile()
       return

@@ -15,8 +15,8 @@ VERSION="$(/usr/bin/plutil -extract CFBundleShortVersionString raw -o - "$INFO_P
 SIGNING_IDENTITY="${SIGNING_IDENTITY:--}"
 SIGNING_KEYCHAIN="${SIGNING_KEYCHAIN:-}"
 APP_PATH="$BUILD_ROOT/$APP_NAME.app"
-DMG_PATH="$OUTPUT_DIR/USB-Bench-$VERSION-Apple-Silicon.dmg"
 ICON_MASTER="$PROJECT_ROOT/Assets/USB-Bench-Icon.png"
+COMPANY_LOGO="$PROJECT_ROOT/Assets/BinaryBears-Logo.png"
 ICONSET_PATH="$BUILD_ROOT/AppIcon.iconset"
 ASSET_CATALOG="$BUILD_ROOT/IconAssets.xcassets"
 ASSET_OUTPUT="$BUILD_ROOT/compiled-assets"
@@ -51,6 +51,7 @@ ditto "$BIN_PATH/$EXECUTABLE_NAME" "$APP_PATH/Contents/MacOS/$EXECUTABLE_NAME"
 chmod 755 "$APP_PATH/Contents/MacOS/$EXECUTABLE_NAME"
 ditto "$PROJECT_ROOT/Packaging/Info.plist" "$APP_PATH/Contents/Info.plist"
 ditto "$PROJECT_ROOT/Packaging/PkgInfo" "$APP_PATH/Contents/PkgInfo"
+ditto "$COMPANY_LOGO" "$APP_PATH/Contents/Resources/BinaryBears-Logo.png"
 
 sips -z 16 16 "$ICON_MASTER" --out "$ICONSET_PATH/icon_16x16.png" >/dev/null
 sips -z 32 32 "$ICON_MASTER" --out "$ICONSET_PATH/icon_16x16@2x.png" >/dev/null
@@ -85,29 +86,4 @@ else
 fi
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
-DMG_STAGE="$(mktemp -d "$BUILD_ROOT/dmg-stage.XXXXXX")"
-trap 'rm -rf "$DMG_STAGE"' EXIT
-ditto "$APP_PATH" "$DMG_STAGE/$APP_NAME.app"
-ln -s /Applications "$DMG_STAGE/Applications"
-
-rm -f "$DMG_PATH"
-hdiutil create \
-  -volname "$APP_NAME" \
-  -srcfolder "$DMG_STAGE" \
-  -fs HFS+ \
-  -format UDZO \
-  -imagekey zlib-level=9 \
-  -ov \
-  "$DMG_PATH"
-if [[ "$SIGNING_IDENTITY" != "-" ]]; then
-  signing_arguments=(--force --sign "$SIGNING_IDENTITY" --timestamp)
-  if [[ -n "$SIGNING_KEYCHAIN" ]]; then
-    signing_arguments+=(--keychain "$SIGNING_KEYCHAIN")
-  fi
-  codesign "${signing_arguments[@]}" "$DMG_PATH"
-  codesign --verify --verbose=2 "$DMG_PATH"
-fi
-hdiutil verify "$DMG_PATH"
-
 echo "$APP_PATH"
-echo "$DMG_PATH"

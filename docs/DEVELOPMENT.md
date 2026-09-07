@@ -39,10 +39,39 @@ Run the complete local quality gate:
 ```
 
 This checks formatting, metadata, shell syntax, canonical brand assets, tests,
-packaging, and the generated DMG. The DMG is ad-hoc signed and is for local
-validation only. The verification script mounts it read-only and checks its
-bundle metadata, signature, Apple Silicon architecture, and Applications
-symlink.
+app packaging, and the generated professional Finder DMG. The DMG is ad-hoc
+signed and is for local validation only. The verification script mounts it
+read-only and checks its layout resources, website shortcut, bundle metadata,
+signature, Apple Silicon architecture, and Applications symlink.
+
+The two packaging stages can also be run explicitly:
+
+```sh
+./scripts/package_app.sh
+./scripts/make_dmg.sh
+```
+
+`package_app.sh` creates only the application. `make_dmg.sh` authors the DMG;
+the project intentionally has no `build.command` launcher.
+
+## Qualification on an attached volume
+
+With explicit permission to write synthetic test data to that volume:
+
+```sh
+USB_BENCH_TEST_DIRECTORY=/Volumes/TEST-DRIVE \
+  swift test --disable-sandbox --filter BenchmarkEngineTests
+swift run -c release --disable-sandbox USBBenchProbe \
+  benchmark /Volumes/TEST-DRIVE 2048 2
+```
+
+The tests create isolated UUID directories and remove their own fixtures. The
+probe uses the engine's anonymous temporary file. Do not disconnect the drive
+during a run. A network-mounted filesystem qualifies that mounted stack, not
+the underlying disk's native filesystem or raw performance. Keep raw probe
+output private: it contains volume names, paths, and device identifiers.
+
+See [1.3.0 local validation](VALIDATION-1.3.0.md) for the current evidence.
 
 ## Change workflow
 
@@ -64,8 +93,9 @@ Every benchmark-engine change must preserve these properties:
 
 1. No formatting, unmounting, or raw-device access.
 2. No opening, reading, modifying, or deleting existing user files.
-3. Writes are limited to one `.usbbench-<UUID>.tmp` file.
-4. Cleanup targets only the URL created by the active benchmark.
+3. Writes are limited to one exclusively created `.usbbench-<UUID>.tmp` file.
+4. The file is unlinked before benchmark data is written and remains available
+   only through the active descriptor; closing it reclaims the storage.
 5. Free space is checked in the interface and immediately before I/O.
 6. The test stops if macOS rejects `F_NOCACHE`.
 7. Automated tests write only to isolated temporary directories.
@@ -113,3 +143,18 @@ The optimized website icon is generated from the same master:
 Do not edit `docs/assets/usb-bench-icon.png` independently. CI verifies its
 dimensions and compares it with a freshly generated derivative of the
 canonical icon.
+
+`Assets/BinaryBears-Logo.png` is the sanitized 256-by-256 transparent company
+logo bundled by the application. The source SVG is intentionally not committed.
+To regenerate the raster from an approved source file, run:
+
+```sh
+xcrun swift scripts/render_sanitized_image.swift \
+  /path/to/BinaryBears-logo.svg \
+  Assets/BinaryBears-Logo.png \
+  256 square
+```
+
+The DMG-only raster artwork is under `Packaging/DMG/Assets`. Asset verification
+rejects unexpected formats, missing alpha channels, and common source or local
+path metadata markers.
