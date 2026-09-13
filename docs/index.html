@@ -17,7 +17,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta
     http-equiv="Content-Security-Policy"
-    content="default-src 'none'; connect-src https://api.github.com; img-src 'self' data:; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; object-src 'none'"
+    content="default-src 'none'; connect-src https://api.github.com; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; object-src 'none'"
   >
   <meta name="theme-color" id="themeColor" content="#f5f5f7">
   <meta property="og:type" content="website">
@@ -1583,6 +1583,7 @@
       }
     }
   </style>
+<script src="preview-bridge.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main" data-i18n="skip">Vai al contenuto</a>
